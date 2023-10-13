@@ -1,2 +1,2 @@
-# CI516-AI_for_Games
+# CI516 - Artifical Intelligence for Games
  
