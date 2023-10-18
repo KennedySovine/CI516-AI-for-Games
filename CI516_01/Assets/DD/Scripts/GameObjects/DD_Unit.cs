@@ -3,6 +3,8 @@
 // -------------------- David Dorrington, UoB Games, 2023
 // ---------------------------------------------------------------------
 using System;
+using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class DD_Unit : DD_BaseObject
@@ -17,7 +19,9 @@ public class DD_Unit : DD_BaseObject
     public Vector3 nextPosition = Vector3.zero;
     public GameObject nextSlotObject = null;
     public float speed = 1;
-    bool isMoving = false;
+    bool isMoving = true;
+
+    private int direction = (int)UnityEngine.Random.Range(0, 4);
 
     // ---------------------------------------------------------------------
     private void Start()
@@ -32,9 +36,8 @@ public class DD_Unit : DD_BaseObject
         // Round off postion to nearest int ands store the current position
         transform.position = new Vector3(xPos, 0, zPos);      
         currentPostion = transform.position;
-              
-        // Set the initial state
-        unitState = States.roam;
+
+        unitState = States.wander;
     }
 
     // ---------------------------------------------------------------------
@@ -45,12 +48,16 @@ public class DD_Unit : DD_BaseObject
             Roam();
             MoveUnit();
         }
+        else if (unitState == States.wander)
+        {
+            Wander();
+        }
     }//---
 
     // ---------------------------------------------------------------------
     private void Roam()
     {
-        // generate random adjacent tile to move to     
+        //generate random adjacent tile to move to     
         if (!isMoving) // Set a new direction if unit is not moving
         {
             int direction = (int)UnityEngine.Random.Range(0, 4);
@@ -90,6 +97,61 @@ public class DD_Unit : DD_BaseObject
 
     }//-----
 
+    private void Wander(){
+        if (direction == 0) nextPosition = new Vector3(currentPostion.x - 1, 0, currentPostion.z);
+        if (direction == 1) nextPosition = new Vector3(currentPostion.x + 1, 0, currentPostion.z);
+        if (direction == 2) nextPosition = new Vector3(currentPostion.x, 0, currentPostion.z - 1);
+        if (direction == 3) nextPosition = new Vector3(currentPostion.x, 0, currentPostion.z + 1);
+
+        nextPosition = new Vector3((int)nextPosition.x, 0, (int)nextPosition.z);
+
+        if (isMoving){
+            Vector2 nextPos = new(nextPosition.x, nextPosition.z);
+            Vector2 curentRealPos = new(transform.position.x, transform.position.z);
+
+            if (Vector2.Distance(nextPos, curentRealPos) > 0.01F) // Move Unit to new slot
+            {
+                transform.LookAt(nextPosition);
+                transform.Translate(0, 0, speed * Time.deltaTime);
+            }
+            else
+            {
+                print("at target, stopping Moving");
+                isMoving = false; // stop moving            
+            }
+        }
+        else{
+
+            // Round off next Pos
+          //  print("NextPos " + nextPosition);              
+
+            //check next Postion tile is empty     
+            int newX = (int)nextPosition.x;
+            int newZ = (int)nextPosition.z;
+
+            if (newX >= 0 && newX < 100 && newZ > 0 && newZ < 100) // is on the board
+            {
+                nextSlotObject = gameManager.playArea[newZ, newX];
+
+                if (gameManager.playArea[newZ, newX] == null) // slot is empty
+                {                  
+                    gameManager.playArea[zPos, xPos] = null; // clear old slot
+                    gameManager.playArea[newZ, newX] = gameObject; //set new slot                 
+                    xPos = newX;
+                    zPos = newZ;
+                    currentPostion = nextPosition;
+                    isMoving = true;
+                }
+                else
+                {
+                    print("new slot occupied by " + gameManager.playArea[newZ, newX]);
+                    direction = (int)UnityEngine.Random.Range(0, 4);
+                    isMoving = false;
+                }
+            }
+        }
+    }
+
     private void MoveUnit()
     {
         if (isMoving)
@@ -113,4 +175,4 @@ public class DD_Unit : DD_BaseObject
 
 }//==========
 
-public enum States { idle, roam, explore, attack, flee }
+public enum States { idle, roam, wander, explore, attack, flee }
