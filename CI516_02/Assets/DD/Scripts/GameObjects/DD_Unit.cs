@@ -2,29 +2,36 @@
 // --------------------  AI: Unit Object Class
 // -------------------- David Dorrington, UoB Games, 2023
 // ---------------------------------------------------------------------
-using System.Collections;
+//using System;
 using UnityEngine;
-using Random = UnityEngine.Random;
+
+// Enums
+public enum States { idle, roam, wander, chase, attack, flee }
+public enum Heading { north, east, south, west }
 
 public class DD_Unit : DD_BaseObject
 {
-    public DD_GameManager gameManager;
+    // ---------------------------------------------------------------------    
+    [Header("Unit State")]
+    public States unitState = States.idle;
+    private DD_GameManager gameManager;
 
     // Movement Variables
+    [Header("Unit Positions")]
     public Vector3 targetPosition = Vector3.zero;
     public Vector3 currentPosition = Vector3.zero;
     public Vector3 startPosition = Vector3.zero;
     public Vector3 nextPosition = Vector3.zero;
-    public GameObject nextSlotObject = null;
+
+
+    [Header("Movement")]
     public float speed = 1;
     bool isMoving = false;
-    bool ChaseFleeCollision = false;
-
+    public float chaseRange = 20;
     // Wander vars
     public bool obstacleAhead = false;
     public Heading unitHeading;
-    public States unitState = States.idle;
-    States previousState;
+
 
     // ---------------------------------------------------------------------
     private void Start()
@@ -42,94 +49,115 @@ public class DD_Unit : DD_BaseObject
 
         // Set initial states
         unitHeading = (Heading)Random.Range(0, 4);
-        unitState = States.roam;
+        unitState = States.wander;
     }//----
 
     // ---------------------------------------------------------------------
     private void FixedUpdate()
     {
+        StateManager();
         CheckState();
     }//---
+
+    //****************************************************************************
+    // ************            Add to the State Manager below 
+    //****************************************************************************
+
+    // ---------------------------------------------------------------------
+    private void StateManager()
+    {
+        
+
+
+
+    }//----
+
+
+ 
 
 
     // ---------------------------------------------------------------------
     private void CheckState()
     {
-
         if (unitState == States.roam) Roam();
         if (unitState == States.wander) Wander();
-        if (unitState == States.chase) Chase();
-        if (unitState == States.flee) Flee();
+        if (unitState == States.chase) ChaseDirect(false);
+        if (unitState == States.flee) ChaseDirect(true);
         MoveUnit();
     }//------
 
 
     // ---------------------------------------------------------------------
-    private void Chase()
+    private void ChaseDirect(bool reverse)
     {
-        if (!isMoving)
+        if (!isMoving) // Set a new direction if unit is not moving
         {
-            targetPosition = gameManager.mainTargetPos;
+            if (reverse)
+                targetPosition = gameManager.secondaryTargetPos;
+            else
+                targetPosition = gameManager.mainTargetPos;
 
-            //Move towards the target
-            nextPosition = Vector3.MoveTowards(currentPosition, targetPosition, 1);
-            float newX = nextPosition.x;
-            float newZ = nextPosition.z;
 
-            // Check if the new postion is on the board
-            if (newX >= 0 && newX < gameManager.playArea.GetLength(1) && newZ >= 0 && newZ < gameManager.playArea.GetLength(0))
+            // Find Straight Line to target  ---------------------------
+            float dx = (targetPosition.x - currentPosition.x);
+            float dz = (targetPosition.z - currentPosition.z);
+            float angle = Mathf.Atan2(dx, dz);
+
+            // use Trig to work out which slot is closest to a straight line to target
+            if (!reverse)
             {
-                if (gameManager.playArea[(int)newZ, (int)newX] == null) // slot is empty
-                {
-                    gameManager.playArea[zPos, xPos] = null; // clear old slot
-                    gameManager.playArea[(int)newZ, (int)newX] = gameObject; //set new slot
-                    currentPosition = nextPosition;
-                    isMoving = true;
-                }
-                else
-                {
-                    //print("new slot occupied by " + gameManager.playArea[(int)newZ, (int)newX]);
-                    previousState = unitState;
-                    unitState = States.roam;
-                    ChaseFleeCollision = true;
-
-                }
+                if (Mathf.Abs(dx) > 0.1F) nextPosition.x = currentPosition.x + Mathf.Round(1.4F * Mathf.Sin(angle));
+                if (Mathf.Abs(dz) > 0.1F) nextPosition.z = currentPosition.z + Mathf.Round(1.4F * Mathf.Cos(angle));
             }
+            else
+            {
+                if (Mathf.Abs(dx) > 0.1F) nextPosition.x = currentPosition.x - Mathf.Round(1.4F * Mathf.Sin(angle));
+                if (Mathf.Abs(dz) > 0.1F) nextPosition.z = currentPosition.z - Mathf.Round(1.4F * Mathf.Cos(angle));
+            }
+
+            // Round off next Pos
+            nextPosition = new Vector3((int)nextPosition.x, 0, (int)nextPosition.z);
+            int newX = (int)nextPosition.x;
+            int newZ = (int)nextPosition.z;
+
+            // Check if the new postion is on the board and free
+            if (CheckNewPositionisFree(newX, newZ)) SetNewPosition(newX, newZ);
         }
     }//---
 
-    private void Flee()
+
+
+
+    // ---------------------------------------------------------------------
+    private void ChaseSimple(bool reverse)
     {
-        if (!isMoving)
+        if (!isMoving) // Set a new direction if unit is not moving
         {
-            targetPosition = gameManager.mainTargetPos;
+            if (reverse)
+                targetPosition = gameManager.secondaryTargetPos;
+            else
+                targetPosition = gameManager.mainTargetPos;
 
-            //Move towards the target
-            nextPosition = Vector3.MoveTowards(currentPosition, targetPosition, -1);
-            float newX = nextPosition.x;
-            float newZ = nextPosition.z;
+            Vector3 moveDirection = Vector3.zero;
 
-            // Check if the new postion is on the board
-            if (newX >= 0 && newX < gameManager.playArea.GetLength(1) && newZ >= 0 && newZ < gameManager.playArea.GetLength(0))
-            {
-                if (gameManager.playArea[(int)newZ, (int)newX] == null) // slot is empty
-                {
-                    gameManager.playArea[zPos, xPos] = null; // clear old slot
-                    gameManager.playArea[(int)newZ, (int)newX] = gameObject; //set new slot
-                    currentPosition = nextPosition;
-                    isMoving = true;
-                }
-                else
-                {
-                    //print("new slot occupied by " + gameManager.playArea[(int)newZ, (int)newX]);
-                    previousState = unitState;
-                    unitState = States.roam;
-                    ChaseFleeCollision = true;
+            if (targetPosition.x < currentPosition.x) moveDirection += Vector3.left;
+            if (targetPosition.x > currentPosition.x) moveDirection += Vector3.right;
+            if (targetPosition.z < currentPosition.z) moveDirection += Vector3.back;
+            if (targetPosition.z > currentPosition.z) moveDirection += Vector3.forward;
 
-                }
-            }
+            // chase or flee
+            if (reverse) nextPosition = currentPosition - moveDirection;
+            else nextPosition = currentPosition + moveDirection;
+
+            // Round off next Pos
+            nextPosition = new Vector3((int)nextPosition.x, 0, (int)nextPosition.z);
+            int newX = (int)nextPosition.x;
+            int newZ = (int)nextPosition.z;
+
+            // Check if the new postion is on the board and free
+            if (CheckNewPositionisFree(newX, newZ)) SetNewPosition(newX, newZ);
         }
-    }
+    }//---
 
     // ---------------------------------------------------------------------
     private void Wander()
@@ -155,23 +183,8 @@ public class DD_Unit : DD_BaseObject
                 int newX = (int)nextPosition.x;
                 int newZ = (int)nextPosition.z;
 
-                // Check if the new postion is on the board
-                if (newX >= 0 && newX < gameManager.playArea.GetLength(1) && newZ >= 0 && newZ < gameManager.playArea.GetLength(0))
-                {
-                    if (gameManager.playArea[newZ, newX] == null) // slot is empty
-                    {
-                        gameManager.playArea[zPos, xPos] = null; // clear old slot
-                        gameManager.playArea[newZ, newX] = gameObject; //set new slot                 
-                        xPos = newX; zPos = newZ;
-                        currentPosition = nextPosition;
-                        isMoving = true;
-                    }
-                    else
-                    {
-                        //print("new slot occupied by " + gameManager.playArea[newZ, newX]);
-                        isMoving = false;
-                    }
-                }
+                // Check if the new postion is on the board and free
+                if (CheckNewPositionisFree(newX, newZ)) SetNewPosition(newX, newZ);
             }
         }
     }//-----
@@ -181,11 +194,6 @@ public class DD_Unit : DD_BaseObject
     // ---------------------------------------------------------------------
     private void Roam()
     {
-        if (ChaseFleeCollision)
-        {
-            StartCoroutine(ChaseRoam());
-            unitState = previousState;
-        }
         // generate random adjacent tile to move to     
         if (!isMoving) // Set a new direction if unit is not moving
         {
@@ -200,36 +208,61 @@ public class DD_Unit : DD_BaseObject
             int newX = (int)nextPosition.x;
             int newZ = (int)nextPosition.z;
 
-            // Check if the new postion is on the board
-            if (newX >= 0 && newX < gameManager.playArea.GetLength(1) && newZ >= 0 && newZ < gameManager.playArea.GetLength(0))
-            {
-                if (gameManager.playArea[newZ, newX] == null) // slot is empty
-                {
-                    gameManager.playArea[zPos, xPos] = null; // clear old slot
-                    gameManager.playArea[newZ, newX] = gameObject; //set new slot                 
-                    xPos = newX; zPos = newZ;
-                    currentPosition = nextPosition;
-                    isMoving = true;
-                }
-                else
-                {
-                    // print("new slot occupied by " + gameManager.playArea[newZ, newX]);
-                    isMoving = false;
-                }
-            }
+            // Check if the new postion is on the board and free
+            if (CheckNewPositionisFree(newX, newZ)) SetNewPosition(newX, newZ);
         }
     }//-----
+
+
+    // ---------------------------------------------------------------------
+    private bool CheckNewPositionisFree(int newXPos, int newZPos)
+    {
+        if (newXPos >= 0 && newXPos < gameManager.playArea.GetLength(1) && newZPos >= 0 && newZPos < gameManager.playArea.GetLength(0))
+        {
+            if (gameManager.playArea[newZPos, newXPos] == null)
+            {
+                obstacleAhead = false;
+                return true;
+            }
+            else
+            {
+                obstacleAhead = true;
+                return false;
+            }
+        }
+        obstacleAhead = true;
+        return false;
+    }//---
+
+
+    // ---------------------------------------------------------------------
+    private void SetNewPosition(int newXPos, int newZPos)
+    {
+        if (gameManager.playArea[newZPos, newXPos] == null) // slot is empty
+        {
+            gameManager.playArea[zPos, xPos] = null; // clear old slot
+            gameManager.playArea[newZPos, newXPos] = gameObject; //set new slot                 
+            xPos = newXPos; zPos = newZPos;
+            currentPosition = nextPosition;
+            isMoving = true;
+        }
+        else
+        {          
+            isMoving = false;
+        }
+
+    }//----
 
     // ---------------------------------------------------------------------
     private void MoveUnit()
     {
         if (isMoving)
         {
-            // check distance to new current position
+            // check distance to new position from  current position
             Vector2 movePos = new(currentPosition.x, currentPosition.z);
             Vector2 curentRealPos = new(transform.position.x, transform.position.z);
 
-            if (Vector2.Distance(movePos, curentRealPos) > 0.01F) // Move Unit to new slot
+            if (Vector2.Distance(movePos, curentRealPos) > 0.1F) // Move Unit to new slot 10cm from centre
             {
                 transform.LookAt(currentPosition);
                 transform.Translate(0, 0, speed * Time.deltaTime);
@@ -242,13 +275,6 @@ public class DD_Unit : DD_BaseObject
         }
     }//----
 
-    IEnumerator ChaseRoam()
-    {
-        //print("Chase switching to roam for 2 seconds");
-        yield return new WaitForSeconds(1);
-    }
-}
-    //==========
+}//==========
 
-    public enum States { idle, roam, wander, chase, attack, flee }
-    public enum Heading { north, east, south, west }
+

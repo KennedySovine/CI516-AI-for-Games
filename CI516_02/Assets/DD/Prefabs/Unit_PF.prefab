@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 1678302711030127796}
   m_Layer: 0
   m_Name: Unit_PF
-  m_TagString: NPC
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -127,11 +127,12 @@ MonoBehaviour:
   zPos: 0
   gameManager: {fileID: 0}
   targetPosition: {x: 0, y: 0, z: 0}
-  currentPosition: {x: 0, y: 0, z: 0}
+  currentPostion: {x: 0, y: 0, z: 0}
   startPosition: {x: 0, y: 0, z: 0}
   nextPosition: {x: 0, y: 0, z: 0}
   nextSlotObject: {fileID: 0}
-  speed: 1
+  speed: 3
+  chaseRange: 20
   obstacleAhead: 0
   unitHeading: 0
   unitState: 0

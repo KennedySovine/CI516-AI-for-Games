@@ -8,19 +8,21 @@ using UnityEngine;
 public class DD_Player_Input : MonoBehaviour
 {
     // ---------------------------------------------------------------------
-    public Vector2 slotClicked = Vector2.zero;
-    public int lastKeyPressed = 0;
+    // Camera Control
     public GameObject gameCamera;
     public float camMoveSpeed = 10f;
 
+    // Mouse Select
     public Vector2 leftClickPostion;
     public Vector2 rightClickPostion;
-
+    public Vector2 slotClicked = Vector2.zero;
+    
+    public int lastKeyPressed = 0;
+ 
 
     // ---------------------------------------------------------------------
     void Update()
-    {
-        // if (Input.GetMouseButtonDown(0)) print(Input.mousePosition);
+    {       
         GetPlayerMouseClick();
         CameraControl();
     }//-----
