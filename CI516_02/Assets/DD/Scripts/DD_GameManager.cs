@@ -125,6 +125,14 @@ public class DD_GameManager : MonoBehaviour
             }
         }
 
+        if (Input.GetKeyDown(KeyCode.Alpha5))
+        {
+            foreach (GameObject go in activeUnits)
+            {
+                go.GetComponent<DD_Unit>().unitState = States.flee;
+            }
+        }
+
     }//---
 
 
