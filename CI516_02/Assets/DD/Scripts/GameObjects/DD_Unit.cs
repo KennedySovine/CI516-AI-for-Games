@@ -93,12 +93,42 @@ public class DD_Unit : DD_BaseObject
     // ---------------------------------------------------------------------
     private void StateManager()
     {
-        
+        if (isMoving) return;
+        if (isDepositing) return;
 
-        // ***************************************************************
+        if (Vector3.Distance(currentPosition, nearestResourcePosition) < chaseRange)
+        {
+            unitState = States.chase;
+        }
 
+        if (Vector3.Distance(currentPosition, nearestResourcePosition) < stopRange)
+        {
+            unitState = States.idle;
+        }
 
-        // ADD your statemanger script here
+        if (Vector3.Distance(currentPosition, nearestResourcePosition) > chaseRange)
+        {
+            unitState = States.wander;
+        }
+
+        if (Vector3.Distance(nearestResourcePosition, currentPosition) <= stopRange)
+        {
+            unitState = States.harvest;
+        }
+
+        if (resourceCarrying > resourceLimit - 0.1F)
+        {
+            unitState = States.deposit;
+        }
+
+        if (unitState != States.wander)
+        {
+            if (obstacleAhead)
+            {
+                unitState = States.roam;
+                obstacleAhead = false;
+            }
+        }
 
 
 

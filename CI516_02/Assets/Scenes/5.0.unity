@@ -278,7 +278,7 @@ MonoBehaviour:
   Teams:
   - {fileID: 2337509756319959829, guid: 8dc881b262e53c948badf42c03addad7, type: 3}
   - {fileID: 2337509756319959829, guid: 66c2295fb2d1f0246884c373781c306e, type: 3}
-  - {fileID: 2337509756319959829, guid: 8dc881b262e53c948badf42c03addad7, type: 3}
+  - {fileID: 2337509756319959829, guid: 0ab578343a047423d9cb08fb24b0cb94, type: 3}
   markerPrefab: {fileID: 2187165592566620597, guid: a3703095126cc8041b5c4c20587caaab, type: 3}
   redMarkerPrefab: {fileID: 2075818595054763059, guid: c3d9f195878fa5a42a3fbb41acbd30ab, type: 3}
   unitPrefab: {fileID: 214879434611196659, guid: 7ead9036dc8621840a2d0a5f800482ce, type: 3}
