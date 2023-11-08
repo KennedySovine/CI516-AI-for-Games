@@ -3,47 +3,128 @@
 // -------------------- David Dorrington, UoB Games, 2023
 // ---------------------------------------------------------------------
 using System.Collections.Generic;
+
 using UnityEngine;
 
 public class DD_Team : MonoBehaviour
 {
+    // ---------------------------------------------------------------------
 
-    public int team_id = 0;
-    public string team_name = "Team X";
-    public int team_members = 50;
+    [Header("Team Stats")]
+    public Color teamColor = Color.blue;
+    public int teamID = 0;
+    public string teamName = "Team X";
+    public int teamMembersTotal = 50;
     public int activeTeamMembers = 0;
-    public Vector2 team_position = Vector2.zero;
-    public Heading spawnDirection = Heading.east;
-  
- 
-
-    public GameObject baseObjectPrefab = null;
-    public GameObject baseObject = null;
-
-    public GameObject unit = null;
-    private List<GameObject> teamUnits = new();
-
     public float teamResources = 100;
+    public Vector2 teamPosition = Vector2.zero;
+    public Heading spawnDirection = Heading.east;
+    public int unitSpawnDistance = 3;
 
-   
+    [Header("Team Objects")]
+    public GameObject unit = null;
+    public float unitCost = 5;
+    public List<GameObject> teamUnits = new();
+
+    public float spawnCoolDownTime = 5.0f;
+    private float nextSpawnTime = 0.0f;
+    private DD_GameManager gameManager;
+
+    // ---------------------------------------------------------------------
     private void Start()
     {
+        // The game manager will be use to access the game board
+        gameManager = GameObject.Find("GameManager").GetComponent<DD_GameManager>();
+        gameObject.GetComponent<Renderer>().material.color = teamColor;
+        CreateUnits();
+    }//-----
 
-        // Spawn Base at start Pos
+    // ---------------------------------------------------------------------
+    private void FixedUpdate()
+    {
+        SpawnUnit();
+    }//-----
 
+    // ---------------------------------------------------------------------
+    private void SpawnUnit()
+    {
+        if (nextSpawnTime > Time.time) return;    // wait until coolDown over   
+        if (teamResources < unitCost) return;  // Check resources are available
 
-        // Create list of units or Array?
+        print("resources available to create new life");
+        GameObject newUnit = null;
+        DD_Unit unitScript;
 
-        // Insantiate off screen and set inactive
+        // Find first Available Unit 
+        foreach (GameObject unit in teamUnits)
+        {
+            unitScript = unit.GetComponent<DD_Unit>();
+            if (unitScript.isAlive == false)
+            {
+                newUnit = unit;
+                break; // stop searching for inactive units
+            }
+        }
 
-        // Creat Units  - OR sub contract to unit spawner / base 
+        if (!newUnit) return; // exit as no available units 
 
+        // Unit found so Set unit Position and add to playArea Array
+        int newX = (int)teamPosition.x;
+        int newZ = (int)teamPosition.y;
 
+        if (spawnDirection == Heading.east) newX += unitSpawnDistance;
+        if (spawnDirection == Heading.west) newX -= unitSpawnDistance;
+        if (spawnDirection == Heading.north) newZ += unitSpawnDistance;
+        if (spawnDirection == Heading.south) newZ -= unitSpawnDistance;
 
+        if (gameManager.playArea[newZ, newX] == null)
+        {          
+            // Add resource object to array
+            gameManager.playArea[newZ, newX] = newUnit;
+            newUnit.transform.position = new(newX, 0, newZ); // position unit
 
+            // Active unit and add to the total
+            unitScript = newUnit.GetComponent<DD_Unit>();          
+            unitScript.currentPosition = newUnit.transform.position;
+            unitScript.xPos = (int)newUnit.transform.position.x;
+            unitScript.zPos = (int)newUnit.transform.position.z;
+            unitScript.isAlive = true;
+            activeTeamMembers++;
+        }
+        // reduce resesource & set next spawn time
+        teamResources -= unitCost;
+        nextSpawnTime = Time.time + spawnCoolDownTime;
     }//-----
 
 
 
+    // ---------------------------------------------------------------------
+    private void CreateUnits()
+    {
+        for (int i = 0; i < teamMembersTotal; i++)
+        {         
+            int newX =  i;
+            int newZ = -3 - teamID; // position inactive units off the board in rows of teams
+
+            GameObject newUnit = Instantiate(unit, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+            newUnit.transform.SetParent(transform); // keep the hierarchy tidy
+            newUnit.GetComponent<Renderer>().material.color = teamColor;
+            DD_Unit unitScript = newUnit.GetComponent<DD_Unit>();
+            unitScript.unitID = i;
+            unitScript.basePosition = new(teamPosition.x, 0, teamPosition.y); // tell each unit where home is
+            unitScript.team = GetComponent<DD_Team>();
+
+            // Add to list of units
+            teamUnits.Add(newUnit);
+        }
+    }//----
+
+
+
+    // ---------------------------------------------------------------------
+    public void DepositResource  (float DepositRate) // receiver for unit resources
+    {
+        teamResources += DepositRate;
+    }//-----
 
 }//==========

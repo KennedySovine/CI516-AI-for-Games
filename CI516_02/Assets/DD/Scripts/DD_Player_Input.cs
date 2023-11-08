@@ -13,8 +13,8 @@ public class DD_Player_Input : MonoBehaviour
     public float camMoveSpeed = 10f;
 
     // Mouse Select
-    public Vector2 leftClickPostion;
-    public Vector2 rightClickPostion;
+    public Vector2 leftClickPostion = new(99,99);
+    public Vector2 rightClickPostion = new(99, 99);
     public Vector2 slotClicked = Vector2.zero;
     
     public int lastKeyPressed = 0;
@@ -41,10 +41,10 @@ public class DD_Player_Input : MonoBehaviour
         gameCamera.transform.position = new(newCamX, newCamY, newCamZ);
 
         // Zoom by adjusting Field of view with mouse wheel
-        if (Input.mouseScrollDelta.y < 0)
+        if (Input.mouseScrollDelta.y < 0 && gameCamera.GetComponent<Camera>().fieldOfView < 90)
             gameCamera.GetComponent<Camera>().fieldOfView++;
 
-        if (Input.mouseScrollDelta.y > 0)
+        if (Input.mouseScrollDelta.y > 0 && gameCamera.GetComponent<Camera>().fieldOfView > 10)
             gameCamera.GetComponent<Camera>().fieldOfView--;
     }//---
 

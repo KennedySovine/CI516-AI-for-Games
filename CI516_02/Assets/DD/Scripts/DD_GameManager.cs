@@ -13,12 +13,12 @@ public class DD_GameManager : MonoBehaviour
     // Game Data
     public GameObject[,] playArea = { };
     private DD_Player_Input playerInputManager;
-   
+
     [Header("Unit Targets")]
-    public Vector3 mainTargetPos; 
-    public Vector3 secondaryTargetPos;
-  
-    [Header("Game Objects")] 
+    public Vector3 mainTargetPos = new(-50,-50,-50);
+    public Vector3 secondaryTargetPos = new(-50,50,-50);
+
+    [Header("Game Objects")]
     // Teams
     public GameObject[] Teams = new GameObject[2];
 
@@ -26,13 +26,16 @@ public class DD_GameManager : MonoBehaviour
     public GameObject markerPrefab;
     public GameObject redMarkerPrefab;
     public GameObject unitPrefab;
-    public GameObject boxPrefab;
+    public GameObject obstaclePrefab;
     public GameObject objectParent;
     public GameObject unitParent;
     private GameObject targetMarker;
     private GameObject redTargetMarker;
+    public GameObject resourcePF;
+    public int resourcesToSpawn = 100;
     public Vector2 objectsToSpawn = new(500, 1000);
     public int unitsToSpawn = 1000;
+    private readonly List<GameObject> activeTeams = new();
     private readonly List<GameObject> activeUnits = new();
 
     // UI
@@ -44,7 +47,6 @@ public class DD_GameManager : MonoBehaviour
     {
         // Create Array for play area
         playArea = new GameObject[100, 100]; // rows z, cols x
-
     }//------
 
     // ---------------------------------------------------------------------
@@ -58,31 +60,119 @@ public class DD_GameManager : MonoBehaviour
     private void FixedUpdate() // Capped at 50 FPS
     {
         DisplayGameData();
-        SetTargets();
-
     }//---
 
     // ---------------------------------------------------------------------
     private void Update() // variable FPS based on frame render time
     {
-        ChangeStateOnKeyPress();
+      //  ChangeStateOnKeyPress();
     }//---
+
 
     // ---------------------------------------------------------------------
     private void AddInitialGameObjects()
-    {
-        // Add some rects and lines
-        AddRectangle(30, 40, 10, 10, false); //x,z,w,h,filled
-        AddRectangle(50, 80, 20, 5, false);
-        AddRectangle(0, 10, 10, 1, false); // a  line
-        AddRectangle(10, 0, 1, 10, false); // a  line
-
-        AddObjects((int)objectsToSpawn.x, (int)objectsToSpawn.y);
-        AddUnits(unitsToSpawn);
-
-        // AddTestUnit();
+    {    
+        AddTeams();
+        AddObstacles((int)objectsToSpawn.x, (int)objectsToSpawn.y);
+        AddInitialResourceObjects(resourcesToSpawn);   
     }//------
 
+
+    // ---------------------------------------------------------------------
+    private void AddTeams()
+    {
+        int newZ = -5;
+        int newX = -5;
+        int teamIndex = 0;
+
+        foreach (GameObject team in Teams)
+        {
+            GameObject newTeam = Instantiate(Teams[teamIndex], new Vector3((float)newX, 0, (float)newZ), transform.rotation);
+
+            newX = (int)newTeam.GetComponent<DD_Team>().teamPosition.x;
+            newZ = (int)newTeam.GetComponent<DD_Team>().teamPosition.y;
+
+            if (playArea[newZ, newX] == null)
+            {
+                // Add team object to array
+                playArea[newZ, newX] = newTeam;
+                newTeam.transform.position = new(newX, 0, newZ);
+                newTeam.GetComponent<DD_Team>().teamID = teamIndex;
+            }
+            activeTeams.Add(newTeam);
+            teamIndex++;
+        }
+    }//-----
+
+    // ---------------------------------------------------------------------
+    private void AddInitialResourceObjects(int resourceAmount)
+    {
+        for (int i = 0; i < resourceAmount; i++)
+        {
+            int newZ = Random.Range(0, playArea.GetLength(0));
+            int newX = Random.Range(0, playArea.GetLength(1));
+            // check if space is empty
+            if (playArea[newZ, newX] == null)
+            {
+                // Add block object to array
+                playArea[newZ, newX] = (GameObject)Instantiate(resourcePF, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+
+                // child to Objects to keep Hierachy Organised
+                playArea[newZ, newX].transform.parent = objectParent.transform;
+            }
+        }
+    }//------   
+
+   
+
+    // ---------------------------------------------------------------------
+    private void AddObstacles(int min, int max)
+    {
+        //Add a Random number of Box Objects
+        int spawnAmount = Random.Range(min, max);
+
+        for (int i = 0; i < spawnAmount; i++)
+        {
+            int newZ = Random.Range(0, playArea.GetLength(0));
+            int newX = Random.Range(0, playArea.GetLength(1));
+            // check if space is empty
+            if (playArea[newZ, newX] == null)
+            {
+                // Add block object to array
+                playArea[newZ, newX] = (GameObject)Instantiate(obstaclePrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+
+                // child to Objects to keep Hierachy Organised
+                playArea[newZ, newX].transform.parent = objectParent.transform;
+            }
+        }
+    }//------   
+
+
+    // ---------------------------------------------------------------------
+    private void DisplayGameData()
+    {
+        // Left Hand Text Window
+        LeftTextWindow.text = "Game States \n ==================";
+
+       // LeftTextWindow.text += "L:  " + playerInputManager.leftClickPostion;
+       // LeftTextWindow.text += "  R:  " + playerInputManager.rightClickPostion;
+
+        // Display Team Stats
+        foreach (GameObject team in activeTeams)
+        {
+            DD_Team teamScript = team.GetComponent<DD_Team>();
+            LeftTextWindow.text += "\n\nTeam: " + teamScript.teamName;
+            LeftTextWindow.text += "\nUnits: " + teamScript.activeTeamMembers + " / " + teamScript.teamMembersTotal;
+            LeftTextWindow.text += "\nResources: " + (int)teamScript.teamResources;
+        }
+    }//-----
+
+
+
+
+
+
+    //  ************************** Older Functions Not Currently Used ****************************
 
     // ---------------------------------------------------------------------
     private void SetTargets()
@@ -194,28 +284,6 @@ public class DD_GameManager : MonoBehaviour
     }//----
 
     // ---------------------------------------------------------------------
-    private void AddObjects(int min, int max)
-    {
-        //Add a Random number of Box Objects
-        int spawnAmount = Random.Range(min, max);
-
-        for (int i = 0; i < spawnAmount; i++)
-        {
-            int newZ = Random.Range(0, playArea.GetLength(0));
-            int newX = Random.Range(0, playArea.GetLength(1));
-            // check if space is empty
-            if (playArea[newZ, newX] == null)
-            {
-                // Add block object to array
-                playArea[newZ, newX] = (GameObject)Instantiate(boxPrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
-
-                // child to Objects to keep Hierachy Organised
-                playArea[newZ, newX].transform.parent = objectParent.transform;
-            }
-        }
-    }//------   
-
-    // ---------------------------------------------------------------------
     private void AddRectangle(int xStart, int zStart, int width, int height, bool isFilled)
     {
         if (xStart + width < playArea.GetLength(1) && zStart + height < playArea.GetLength(0))
@@ -233,7 +301,7 @@ public class DD_GameManager : MonoBehaviour
                         if (playArea[newZ, newX] == null)
                         {
                             // Add block object to array
-                            playArea[newZ, newX] = (GameObject)Instantiate(boxPrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+                            playArea[newZ, newX] = (GameObject)Instantiate(obstaclePrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
 
                             // child to Objects to keep Hierachy Organised
                             playArea[newZ, newX].transform.parent = objectParent.transform;
@@ -244,7 +312,7 @@ public class DD_GameManager : MonoBehaviour
                         if (row == 0 || row == height - 1 || col == 0 || col == width - 1)
                         {
                             // Add block object to array
-                            playArea[newZ, newX] = (GameObject)Instantiate(boxPrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+                            playArea[newZ, newX] = (GameObject)Instantiate(obstaclePrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
 
                             // child to Objects to keep Hierachy Organised
                             playArea[newZ, newX].transform.parent = objectParent.transform;
@@ -257,17 +325,6 @@ public class DD_GameManager : MonoBehaviour
         {
             print("Square is off the board");
         }
-    }//-----
-
-
-
-    // ---------------------------------------------------------------------
-    private void DisplayGameData()
-    {
-        // Left Hand Text Window
-        LeftTextWindow.text = "Game States \n ==================\n";
-        LeftTextWindow.text += "\nLeft Mouse:  " + playerInputManager.leftClickPostion;
-        LeftTextWindow.text += "\nRight Mouse:  " + playerInputManager.rightClickPostion;
     }//-----
 
 

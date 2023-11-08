@@ -2,35 +2,49 @@
 // --------------------  AI: Unit Object Class
 // -------------------- David Dorrington, UoB Games, 2023
 // ---------------------------------------------------------------------
-//using System;
+
 using UnityEngine;
 
 // Enums
-public enum States { idle, roam, wander, chase, attack, flee }
+public enum States { idle, roam, wander, chase, attack, flee, harvest, deposit }
 public enum Heading { north, east, south, west }
 
 public class DD_Unit : DD_BaseObject
 {
     // ---------------------------------------------------------------------    
+    public int unitID = -1;
     [Header("Unit State")]
     public States unitState = States.idle;
     private DD_GameManager gameManager;
 
     // Movement Variables
     [Header("Unit Positions")]
+    public Vector3 basePosition = Vector3.zero;
     public Vector3 targetPosition = Vector3.zero;
     public Vector3 currentPosition = Vector3.zero;
     public Vector3 startPosition = Vector3.zero;
     public Vector3 nextPosition = Vector3.zero;
-
+    public Vector3 nearestResourcePosition = new(-50, 50, -50);
+    public Vector3 nearestEnemyPosition = new(-50, 50, -50);
+    private GameObject nearestResource;
 
     [Header("Movement")]
     public float speed = 1;
     bool isMoving = false;
-    public float chaseRange = 20;
+    public float chaseRange = 18;
+    public float fleeRange = 20;
+    public float stopRange = 2;
     // Wander vars
     public bool obstacleAhead = false;
     public Heading unitHeading;
+
+    // resources
+    public float resourceCarrying = 0;
+    public float resourceLimit = 10;
+    public float resourceHarvestSpeed = 5;
+    public bool isDepositing = false;
+
+    public DD_Team team;
 
 
     // ---------------------------------------------------------------------
@@ -39,11 +53,9 @@ public class DD_Unit : DD_BaseObject
         // The game manager will be use to access the game board
         gameManager = GameObject.Find("GameManager").GetComponent<DD_GameManager>();
 
-        // Round the positions to nearest whole number
+        // Round off postion to nearest int ands store the current position
         xPos = (int)transform.position.x;
         zPos = (int)transform.position.z;
-
-        // Round off postion to nearest int ands store the current position
         transform.position = new Vector3(xPos, 0, zPos);
         currentPosition = transform.position;
 
@@ -55,63 +67,148 @@ public class DD_Unit : DD_BaseObject
     // ---------------------------------------------------------------------
     private void FixedUpdate()
     {
-        StateManager();
-        CheckState();
+        if (isAlive)
+        {
+            FindNearestResource();
+            StateManager();
+            UnitActions();
+        }
+
     }//---
 
-    //****************************************************************************
-    // ************            Add to the State Manager below 
-    //****************************************************************************
-
     // ---------------------------------------------------------------------
-    private void StateManager()
-    {
-        int distanceTarget = (int)Vector3.Distance(gameManager.mainTargetPos, currentPosition);
-        int distanceDanger = (int)Vector3.Distance(gameManager.secondaryTargetPos, currentPosition);
-
-        if (distanceDanger <= chaseRange)
-        {
-            unitState = States.flee;
-        }
-        else if (distanceTarget <= 1)
-        {
-            unitState = States.idle;
-        }
-        else if (distanceTarget <= chaseRange)
-        {
-            unitState = States.chase;
-        }
-        else
-        {
-            unitState = States.wander;
-        }
-    }//----
-
-
- 
-
-
-    // ---------------------------------------------------------------------
-    private void CheckState()
+    private void UnitActions()
     {
         if (unitState == States.roam) Roam();
         if (unitState == States.wander) Wander();
         if (unitState == States.chase) ChaseDirect(false);
         if (unitState == States.flee) ChaseDirect(true);
+        if (unitState == States.harvest) HarvestResource();
+        if (unitState == States.deposit) DepositResource();
+
         MoveUnit();
     }//------
 
 
     // ---------------------------------------------------------------------
+    private void StateManager()
+    {
+        
+
+        // ***************************************************************
+
+
+        // ADD your statemanger script here
+
+
+
+
+   
+    }//----
+
+    // ---------------------------------------------------------------------
+    private void DepositResource()
+    {
+        // Move home
+        if (Vector3.Distance(basePosition, currentPosition) > stopRange)
+        {
+            ChaseDirect(false);
+        }
+        else // Unit is Close to home
+        {
+            // Stop depositing when unit resource almost empty
+            if (resourceCarrying > 0 && resourceCarrying < 0.2F)
+                isDepositing = false;
+            else
+                isDepositing = true;
+
+            if (resourceCarrying > resourceHarvestSpeed * Time.deltaTime)
+            {
+                team.DepositResource(resourceHarvestSpeed * Time.deltaTime);
+                resourceCarrying -= (resourceHarvestSpeed * Time.deltaTime);
+            }
+        }
+    }//-----
+
+
+
+    // ---------------------------------------------------------------------
+    private void FindNearestResource()
+    {
+        if (unitState == States.wander)
+        {
+            // Find All available resources and store in an array
+            GameObject[] resources;
+            resources = GameObject.FindGameObjectsWithTag("Resource");
+
+            // Find the nearest
+            GameObject closestResource = null;
+            float distanceToResource = Mathf.Infinity;
+
+            foreach (GameObject resource in resources) // Loop though all resources in array
+            {
+                float currentNearestDistance = Vector3.Distance(resource.transform.position, currentPosition);
+
+                if (currentNearestDistance < distanceToResource)
+                {
+                    closestResource = resource;
+                    distanceToResource = currentNearestDistance;
+                }
+            }
+            // Set Target of resourse
+            if (closestResource != null)
+            {
+                nearestResourcePosition = closestResource.transform.position;
+                nearestResource = closestResource;
+            }
+        }
+    }//----
+
+
+
+    // ---------------------------------------------------------------------
+    private void HarvestResource()
+    {
+        if (!nearestResource)
+        {
+            nearestResourcePosition = new(-50, -50, -50); // out of range
+              unitState = States.wander;
+            return; // no nearet resource found
+        }
+
+        if (Vector3.Distance(nearestResourcePosition, currentPosition) <= chaseRange) // in range
+        {
+            if (nearestResource)
+            {
+                if (nearestResource.GetComponent<DD_Resource>().resourceHeld > resourceHarvestSpeed * Time.deltaTime)
+                {
+                    nearestResource.GetComponent<DD_Resource>().GetResource(resourceHarvestSpeed * Time.deltaTime);
+                    resourceCarrying += resourceHarvestSpeed * Time.deltaTime;
+                }
+            }
+            else
+            {
+                nearestResourcePosition = new(-50, -50, -50); // out of range
+                unitState = States.wander;
+            }
+        }
+        else
+        {
+            unitState = States.wander;
+        }
+    }//-----
+
+
+    // ---------------------------------------------------------------------
     private void ChaseDirect(bool reverse)
     {
-        if (!isMoving) // Set a new direction if unit is not moving
+        if (!isMoving) // Move to target if unit is not moving
         {
-            if (reverse)
-                targetPosition = gameManager.secondaryTargetPos;
-            else
-                targetPosition = gameManager.mainTargetPos;
 
+            if (reverse) targetPosition = nearestEnemyPosition; // flee from danger
+            else targetPosition = nearestResourcePosition;
+
+            if (unitState == States.deposit) targetPosition = basePosition;
 
             // Find Straight Line to target  ---------------------------
             float dx = (targetPosition.x - currentPosition.x);
@@ -141,38 +238,6 @@ public class DD_Unit : DD_BaseObject
     }//---
 
 
-
-
-    // ---------------------------------------------------------------------
-    private void ChaseSimple(bool reverse)
-    {
-        if (!isMoving) // Set a new direction if unit is not moving
-        {
-            if (reverse)
-                targetPosition = gameManager.secondaryTargetPos;
-            else
-                targetPosition = gameManager.mainTargetPos;
-
-            Vector3 moveDirection = Vector3.zero;
-
-            if (targetPosition.x < currentPosition.x) moveDirection += Vector3.left;
-            if (targetPosition.x > currentPosition.x) moveDirection += Vector3.right;
-            if (targetPosition.z < currentPosition.z) moveDirection += Vector3.back;
-            if (targetPosition.z > currentPosition.z) moveDirection += Vector3.forward;
-
-            // chase or flee
-            if (reverse) nextPosition = currentPosition - moveDirection;
-            else nextPosition = currentPosition + moveDirection;
-
-            // Round off next Pos
-            nextPosition = new Vector3((int)nextPosition.x, 0, (int)nextPosition.z);
-            int newX = (int)nextPosition.x;
-            int newZ = (int)nextPosition.z;
-
-            // Check if the new postion is on the board and free
-            if (CheckNewPositionisFree(newX, newZ)) SetNewPosition(newX, newZ);
-        }
-    }//---
 
     // ---------------------------------------------------------------------
     private void Wander()
@@ -262,7 +327,7 @@ public class DD_Unit : DD_BaseObject
             isMoving = true;
         }
         else
-        {          
+        {
             isMoving = false;
         }
 
