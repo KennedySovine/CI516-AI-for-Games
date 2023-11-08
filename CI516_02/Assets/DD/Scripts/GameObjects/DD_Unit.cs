@@ -66,10 +66,25 @@ public class DD_Unit : DD_BaseObject
     // ---------------------------------------------------------------------
     private void StateManager()
     {
-        
+        int distanceTarget = (int)Vector3.Distance(gameManager.mainTargetPos, currentPosition);
+        int distanceDanger = (int)Vector3.Distance(gameManager.secondaryTargetPos, currentPosition);
 
-
-
+        if (distanceDanger <= chaseRange)
+        {
+            unitState = States.flee;
+        }
+        else if (distanceTarget <= 1)
+        {
+            unitState = States.idle;
+        }
+        else if (distanceTarget <= chaseRange)
+        {
+            unitState = States.chase;
+        }
+        else
+        {
+            unitState = States.wander;
+        }
     }//----
 
 
