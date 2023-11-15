@@ -16,13 +16,11 @@ public class DD_Resource : DD_BaseObject
         gameManager = GameObject.Find("GameManager").GetComponent<DD_GameManager>();
     }//-----
 
-
     // ---------------------------------------------------------------------
     private void FixedUpdate()
     {
         CheckResourceLevel();
     }//-----
-
 
     // ---------------------------------------------------------------------
     private void CheckResourceLevel()
@@ -31,11 +29,11 @@ public class DD_Resource : DD_BaseObject
         {
             xPos = (int)transform.position.x;
             zPos = (int)transform.position.z;
-            gameManager.playArea[zPos, xPos] = null; // cleear resource from array
+            gameManager.playArea[zPos, xPos] = null; // clear resource from array
+            gameManager.activeResources.Remove(gameObject);
             Destroy(gameObject);
         }
     }//-----
-
 
     // ---------------------------------------------------------------------
     // Receiver - units access this to steal the resource

@@ -21,6 +21,8 @@ public class DD_Team : MonoBehaviour
     public Heading spawnDirection = Heading.east;
     public int unitSpawnDistance = 3;
 
+    public int[] friendlyTeams = { };
+
     [Header("Team Objects")]
     public GameObject unit = null;
     public float unitCost = 5;
@@ -51,7 +53,7 @@ public class DD_Team : MonoBehaviour
         if (nextSpawnTime > Time.time) return;    // wait until coolDown over   
         if (teamResources < unitCost) return;  // Check resources are available
 
-        print("resources available to create new life");
+      //  print("resources available to create new life");
         GameObject newUnit = null;
         DD_Unit unitScript;
 
@@ -69,8 +71,8 @@ public class DD_Team : MonoBehaviour
         if (!newUnit) return; // exit as no available units 
 
         // Unit found so Set unit Position and add to playArea Array
-        int newX = (int)teamPosition.x;
-        int newZ = (int)teamPosition.y;
+        int newX = (int)Mathf.Round(teamPosition.x);
+        int newZ = (int)Mathf.Round(teamPosition.y); // y is z in this case as V2
 
         if (spawnDirection == Heading.east) newX += unitSpawnDistance;
         if (spawnDirection == Heading.west) newX -= unitSpawnDistance;
@@ -83,13 +85,15 @@ public class DD_Team : MonoBehaviour
             gameManager.playArea[newZ, newX] = newUnit;
             newUnit.transform.position = new(newX, 0, newZ); // position unit
 
-            // Active unit and add to the total
+            // Active unit and add to the totals
             unitScript = newUnit.GetComponent<DD_Unit>();          
-            unitScript.currentPosition = newUnit.transform.position;
-            unitScript.xPos = (int)newUnit.transform.position.x;
-            unitScript.zPos = (int)newUnit.transform.position.z;
+            unitScript.currentPosition = new(newX, 0, newZ); // reset current position
+            unitScript.xPos = newX;
+            unitScript.zPos = newZ;
             unitScript.isAlive = true;
+            unitScript.health = newUnit.GetComponent<DD_UnitHealth>().maxHealth;
             activeTeamMembers++;
+            gameManager.activeUnits.Add(newUnit);          
         }
         // reduce resesource & set next spawn time
         teamResources -= unitCost;
@@ -112,10 +116,10 @@ public class DD_Team : MonoBehaviour
             DD_Unit unitScript = newUnit.GetComponent<DD_Unit>();
             unitScript.unitID = i;
             unitScript.basePosition = new(teamPosition.x, 0, teamPosition.y); // tell each unit where home is
-            unitScript.team = GetComponent<DD_Team>();
+            unitScript.team = GetComponent<DD_Team>();               
 
             // Add to list of units
-            teamUnits.Add(newUnit);
+            teamUnits.Add(newUnit);      
         }
     }//----
 

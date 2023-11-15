@@ -2,7 +2,6 @@
 // --------------------  AI Game Manager
 // -------------------- David Dorrington, UoB Games, 2023
 // ---------------------------------------------------------------------
-
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
@@ -12,7 +11,7 @@ public class DD_GameManager : MonoBehaviour
     // ---------------------------------------------------------------------
     // Game Data
     public GameObject[,] playArea = { };
-    private DD_Player_Input playerInputManager;
+    private DD_PlayerInputManager playerInputManager;
 
     [Header("Unit Targets")]
     public Vector3 mainTargetPos = new(-50,-50,-50);
@@ -36,7 +35,9 @@ public class DD_GameManager : MonoBehaviour
     public Vector2 objectsToSpawn = new(500, 1000);
     public int unitsToSpawn = 1000;
     private readonly List<GameObject> activeTeams = new();
-    private readonly List<GameObject> activeUnits = new();
+    public List<GameObject> activeUnits = new();
+    public   List<GameObject> activeResources = new();
+
 
     // UI
     [Header("Game UI")]
@@ -52,7 +53,7 @@ public class DD_GameManager : MonoBehaviour
     // ---------------------------------------------------------------------
     private void Start()
     {
-        playerInputManager = GetComponent<DD_Player_Input>();
+        playerInputManager = GetComponent<DD_PlayerInputManager>();
         AddInitialGameObjects();
     }//---
 
@@ -60,15 +61,10 @@ public class DD_GameManager : MonoBehaviour
     private void FixedUpdate() // Capped at 50 FPS
     {
         DisplayGameData();
+        SetTargets();
     }//---
 
-    // ---------------------------------------------------------------------
-    private void Update() // variable FPS based on frame render time
-    {
-      //  ChangeStateOnKeyPress();
-    }//---
-
-
+  
     // ---------------------------------------------------------------------
     private void AddInitialGameObjects()
     {    
@@ -89,15 +85,15 @@ public class DD_GameManager : MonoBehaviour
         {
             GameObject newTeam = Instantiate(Teams[teamIndex], new Vector3((float)newX, 0, (float)newZ), transform.rotation);
 
-            newX = (int)newTeam.GetComponent<DD_Team>().teamPosition.x;
-            newZ = (int)newTeam.GetComponent<DD_Team>().teamPosition.y;
+            newX = (int)Mathf.Round(newTeam.GetComponent<DD_Team>().teamPosition.x);
+            newZ = (int)Mathf.Round(newTeam.GetComponent<DD_Team>().teamPosition.y);
 
             if (playArea[newZ, newX] == null)
             {
                 // Add team object to array
                 playArea[newZ, newX] = newTeam;
                 newTeam.transform.position = new(newX, 0, newZ);
-                newTeam.GetComponent<DD_Team>().teamID = teamIndex;
+                newTeam.GetComponent<DD_Team>().teamID = teamIndex + 1;
             }
             activeTeams.Add(newTeam);
             teamIndex++;
@@ -115,10 +111,15 @@ public class DD_GameManager : MonoBehaviour
             if (playArea[newZ, newX] == null)
             {
                 // Add block object to array
-                playArea[newZ, newX] = (GameObject)Instantiate(resourcePF, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+
+                GameObject newResource = (GameObject)Instantiate(resourcePF, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+
+                playArea[newZ, newX] = newResource;
 
                 // child to Objects to keep Hierachy Organised
-                playArea[newZ, newX].transform.parent = objectParent.transform;
+                newResource.transform.parent = objectParent.transform;
+
+                activeResources.Add(newResource);
             }
         }
     }//------   

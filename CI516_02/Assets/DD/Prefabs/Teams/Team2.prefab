@@ -118,15 +118,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afcb03e8d9e55a14fb82022b09d1181a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  teamColor: {r: 0.19416976, g: 1, b: 0, a: 1}
-  teamID: 0
+  teamColor: {r: 0, g: 1, b: 1, a: 1}
+  teamID: -1
   teamName: Team 2
-  teamMembersTotal: 20
+  teamMembersTotal: 10
   activeTeamMembers: 0
-  teamResources: 100
-  teamPosition: {x: 10, y: 90}
-  spawnDirection: 3
+  teamResources: 50
+  teamPosition: {x: 10, y: 25}
+  spawnDirection: 2
   unitSpawnDistance: 3
+  friendlyTeams: 
   unit: {fileID: 214879434611196659, guid: 7ead9036dc8621840a2d0a5f800482ce, type: 3}
   unitCost: 5
   teamUnits: []

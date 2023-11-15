@@ -2,7 +2,7 @@
 // --------------------  AI: Unit Object Class
 // -------------------- David Dorrington, UoB Games, 2023
 // ---------------------------------------------------------------------
-
+using System.Collections.Generic;
 using UnityEngine;
 
 // Enums
@@ -12,40 +12,48 @@ public enum Heading { north, east, south, west }
 public class DD_Unit : DD_BaseObject
 {
     // ---------------------------------------------------------------------    
+    public DD_Team team;
+    public DD_GameManager gameManager;
     public int unitID = -1;
-    [Header("Unit State")]
     public States unitState = States.idle;
-    private DD_GameManager gameManager;
 
-    // Movement Variables
+    // Position Variables
     [Header("Unit Positions")]
     public Vector3 basePosition = Vector3.zero;
     public Vector3 targetPosition = Vector3.zero;
     public Vector3 currentPosition = Vector3.zero;
     public Vector3 startPosition = Vector3.zero;
     public Vector3 nextPosition = Vector3.zero;
-    public Vector3 nearestResourcePosition = new(-50, 50, -50);
-    public Vector3 nearestEnemyPosition = new(-50, 50, -50);
-    private GameObject nearestResource;
 
     [Header("Movement")]
     public float speed = 1;
     bool isMoving = false;
-    public float chaseRange = 18;
     public float fleeRange = 20;
     public float stopRange = 2;
     // Wander vars
     public bool obstacleAhead = false;
     public Heading unitHeading;
 
-    // resources
+    [Header("Resources")]
+    public float resourceRange = 18;
     public float resourceCarrying = 0;
     public float resourceLimit = 10;
     public float resourceHarvestSpeed = 5;
     public bool isDepositing = false;
+    public Vector3 nearestResourcePosition = new(-50, 50, -50);
+    private GameObject nearestResource = null;
 
-    public DD_Team team;
+    [Header("Combat")]
+    public int ammo = 1000;
+    public Vector3 nearestEnemyPosition = new(-50, 50, -50);
+    private GameObject nearestEnemy = null;
+    public float enemyChaseRange = 20;
+    public float attackRange = 10;
+    public float attackCoolDown = 1;
+    public GameObject attackPF = null;
+    private float nextAttackTime = 0;
 
+    public List<int> friendsIDs = new();
 
     // ---------------------------------------------------------------------
     private void Start()
@@ -54,14 +62,23 @@ public class DD_Unit : DD_BaseObject
         gameManager = GameObject.Find("GameManager").GetComponent<DD_GameManager>();
 
         // Round off postion to nearest int ands store the current position
-        xPos = (int)transform.position.x;
-        zPos = (int)transform.position.z;
+        xPos = (int)Mathf.Round(transform.position.x);
+        zPos = (int)Mathf.Round(transform.position.z);
         transform.position = new Vector3(xPos, 0, zPos);
         currentPosition = transform.position;
 
         // Set initial states
         unitHeading = (Heading)Random.Range(0, 4);
         unitState = States.wander;
+
+
+        // Set Teams to ignore for Attacks
+        friendsIDs = new() { team.teamID }; // Start with the team the unit belong to
+        foreach (int team in team.friendlyTeams) // Add the friends teams
+        {
+            friendsIDs.Add(team);
+        }
+
     }//----
 
     // ---------------------------------------------------------------------
@@ -69,11 +86,15 @@ public class DD_Unit : DD_BaseObject
     {
         if (isAlive)
         {
-            FindNearestResource();
-            StateManager();
-            UnitActions();
+            if (!isMoving)
+            {
+                FindNearestResource();
+                FindNearestEnemy();
+                StateManager();
+                UnitActions();
+            }
+            MoveUnit();
         }
-
     }//---
 
     // ---------------------------------------------------------------------
@@ -85,42 +106,44 @@ public class DD_Unit : DD_BaseObject
         if (unitState == States.flee) ChaseDirect(true);
         if (unitState == States.harvest) HarvestResource();
         if (unitState == States.deposit) DepositResource();
+        if (unitState == States.attack) AttackEnemy();
 
-        MoveUnit();
     }//------
 
 
     // ---------------------------------------------------------------------
     private void StateManager()
     {
+        // Currently set for Resource Gathering not Combat
+
         if (isMoving) return;
         if (isDepositing) return;
 
-        if (Vector3.Distance(currentPosition, nearestResourcePosition) < chaseRange)
+        // Check Resource in Range 
+        if (Vector3.Distance(currentPosition, nearestResourcePosition) < resourceRange)
         {
+            targetPosition = nearestResourcePosition;
             unitState = States.chase;
         }
 
         if (Vector3.Distance(currentPosition, nearestResourcePosition) < stopRange)
-        {
             unitState = States.idle;
-        }
 
-        if (Vector3.Distance(currentPosition, nearestResourcePosition) > chaseRange)
-        {
+        // wander if out of range 
+        if (Vector3.Distance(currentPosition, nearestResourcePosition) > resourceRange)
             unitState = States.wander;
-        }
 
+
+        // Harvest Resource if close
         if (Vector3.Distance(nearestResourcePosition, currentPosition) <= stopRange)
-        {
             unitState = States.harvest;
-        }
 
+        // Depoit Resource when full
         if (resourceCarrying > resourceLimit - 0.1F)
-        {
             unitState = States.deposit;
-        }
 
+
+        // is the path blocked and not wandering
         if (unitState != States.wander)
         {
             if (obstacleAhead)
@@ -129,71 +152,144 @@ public class DD_Unit : DD_BaseObject
                 obstacleAhead = false;
             }
         }
-
-
-
-
-   
     }//----
 
-    // ---------------------------------------------------------------------
-    private void DepositResource()
-    {
-        // Move home
-        if (Vector3.Distance(basePosition, currentPosition) > stopRange)
-        {
-            ChaseDirect(false);
-        }
-        else // Unit is Close to home
-        {
-            // Stop depositing when unit resource almost empty
-            if (resourceCarrying > 0 && resourceCarrying < 0.2F)
-                isDepositing = false;
-            else
-                isDepositing = true;
 
-            if (resourceCarrying > resourceHarvestSpeed * Time.deltaTime)
+
+    //                   ****************   COMBAT ***************************
+    // ---------------------------------------------------------------------
+    private void AttackEnemy()
+    {
+        if (!nearestEnemy)
+        {
+            nearestEnemyPosition = new(-50, -50, -50); // out of range
+            unitState = States.wander;
+            return; // no enemy found
+        }
+        //Enemy in Chase Range
+        if (Vector3.Distance(nearestEnemyPosition, currentPosition) < enemyChaseRange && Vector3.Distance(nearestEnemyPosition, currentPosition) > attackRange)
+        {
+            targetPosition = nearestEnemyPosition;
+            unitState = States.chase;
+        }
+        else if (Vector3.Distance(nearestEnemyPosition, currentPosition) < attackRange) // in Attack range
+        {
+            targetPosition = nearestEnemyPosition;
+            unitState = States.idle;
+            SendAttack();
+        }
+    }//-----
+
+
+    private void SendAttack()
+    {
+        if (!attackPF) return; // no bullet object referenced
+
+        if (nextAttackTime < Time.time)
+        {
+            transform.LookAt(nearestEnemyPosition);
+            GameObject unitAttack = Instantiate(attackPF, gameObject.transform);
+            unitAttack.transform.SetParent(null);
+            unitAttack.GetComponent<DD_Attack>().teamID = team.teamID;
+            nextAttackTime = Time.time + attackCoolDown;
+        }
+    }//-----
+
+
+    // ---------------------------------------------------------------------
+    private void FindNearestEnemy()
+    {
+        // Use the list of active resoures in the Game Manager if any units are in it
+        if (gameManager.activeUnits.Count > 0)
+        {
+            // nearest Enemy 
+            GameObject closestEnemy = null;
+            float distanceToEnemy = Mathf.Infinity;
+
+            foreach (GameObject foundActiveUnit in gameManager.activeUnits) // Loop through list of units
             {
-                team.DepositResource(resourceHarvestSpeed * Time.deltaTime);
-                resourceCarrying -= (resourceHarvestSpeed * Time.deltaTime);
+                bool friendFound = false;
+
+                // ignore own team members and Friends
+                foreach (int friendID in friendsIDs)
+                {
+                    if (foundActiveUnit.GetComponent<DD_Unit>().team.teamID == friendID) friendFound = true;
+                }
+
+                if (friendFound) continue; // skip forward to next unit in Acive List
+
+                float currentNearestDistance = Vector3.Distance(foundActiveUnit.transform.position, currentPosition);
+
+                if (currentNearestDistance < distanceToEnemy)
+                {
+                    closestEnemy = foundActiveUnit;
+                    distanceToEnemy = currentNearestDistance;
+                }
+            }
+
+            // Set Target of Enemy Unit
+            if (closestEnemy != null)
+            {     
+                nearestEnemyPosition = new((int)Mathf.Round(closestEnemy.transform.position.x), 0, (int)Mathf.Round(closestEnemy.transform.position.z));
+                nearestEnemy = closestEnemy;
+            }
+            else
+            {
+                nearestEnemyPosition = new(-100, -100, -100);
             }
         }
     }//-----
 
 
 
+
+    private void FindNearestAmmo()
+    {
+
+
+    }
+
+    private void FindHealth()
+    {
+
+    }
+
+
+
+    //                      ****************   RESOURCES   ***************************
+
     // ---------------------------------------------------------------------
     private void FindNearestResource()
     {
         if (unitState == States.wander)
         {
-            // Find All available resources and store in an array
-            GameObject[] resources;
-            resources = GameObject.FindGameObjectsWithTag("Resource");
-
-            // Find the nearest
-            GameObject closestResource = null;
-            float distanceToResource = Mathf.Infinity;
-
-            foreach (GameObject resource in resources) // Loop though all resources in array
+            // Use the list of active resoures in the Game Manager
+            if (gameManager.activeResources.Count > 0)
             {
-                float currentNearestDistance = Vector3.Distance(resource.transform.position, currentPosition);
+                // Find the nearest
+                GameObject closestResource = null;
+                float distanceToResource = Mathf.Infinity;
 
-                if (currentNearestDistance < distanceToResource)
+                foreach (GameObject resource in gameManager.activeResources) // Loop though list of resources
                 {
-                    closestResource = resource;
-                    distanceToResource = currentNearestDistance;
+                    float currentNearestDistance = Vector3.Distance(resource.transform.position, currentPosition);
+
+                    if (currentNearestDistance < distanceToResource)
+                    {
+                        closestResource = resource;
+                        distanceToResource = currentNearestDistance;
+                    }
                 }
-            }
-            // Set Target of resourse
-            if (closestResource != null)
-            {
-                nearestResourcePosition = closestResource.transform.position;
-                nearestResource = closestResource;
+                // Set Target of resourse
+                if (closestResource != null)
+                {
+                    nearestResourcePosition = new((int)Mathf.Round(closestResource.transform.position.x), 0, (int)Mathf.Round(closestResource.transform.position.z));
+                    nearestResource = closestResource;
+                    targetPosition = nearestResourcePosition;
+                }
             }
         }
     }//----
-
 
 
     // ---------------------------------------------------------------------
@@ -202,11 +298,11 @@ public class DD_Unit : DD_BaseObject
         if (!nearestResource)
         {
             nearestResourcePosition = new(-50, -50, -50); // out of range
-              unitState = States.wander;
-            return; // no nearet resource found
+            unitState = States.wander;
+            return; // no nearest resource found
         }
 
-        if (Vector3.Distance(nearestResourcePosition, currentPosition) <= chaseRange) // in range
+        if (Vector3.Distance(nearestResourcePosition, currentPosition) <= resourceRange) // in range
         {
             if (nearestResource)
             {
@@ -228,17 +324,45 @@ public class DD_Unit : DD_BaseObject
         }
     }//-----
 
+    // ---------------------------------------------------------------------
+    private void DepositResource()
+    {
+        // Move home
+        if (Vector3.Distance(basePosition, currentPosition) > stopRange)
+        {
+            targetPosition = basePosition;
+            ChaseDirect(false);
+        }
+        else // Unit is Close to home
+        {
+            // Stop depositing when unit resource almost empty
+            if (resourceCarrying > 0 && resourceCarrying < 0.2F)
+            {
+                isDepositing = false;
+                unitState = States.wander;
+            }
+            else
+            {
+                isDepositing = true;
+            }
+            if (resourceCarrying > resourceHarvestSpeed * Time.deltaTime)
+            {
+                team.DepositResource(resourceHarvestSpeed * Time.deltaTime);
+                resourceCarrying -= (resourceHarvestSpeed * Time.deltaTime);
+            }
+        }
+    }//-----
+
+
+
+
+    //                      ****************   MOVEMENT   ***************************
 
     // ---------------------------------------------------------------------
     private void ChaseDirect(bool reverse)
     {
         if (!isMoving) // Move to target if unit is not moving
         {
-
-            if (reverse) targetPosition = nearestEnemyPosition; // flee from danger
-            else targetPosition = nearestResourcePosition;
-
-            if (unitState == States.deposit) targetPosition = basePosition;
 
             // Find Straight Line to target  ---------------------------
             float dx = (targetPosition.x - currentPosition.x);
@@ -258,9 +382,9 @@ public class DD_Unit : DD_BaseObject
             }
 
             // Round off next Pos
-            nextPosition = new Vector3((int)nextPosition.x, 0, (int)nextPosition.z);
-            int newX = (int)nextPosition.x;
-            int newZ = (int)nextPosition.z;
+            nextPosition = new Vector3((int)Mathf.Round(nextPosition.x), 0, (int)Mathf.Round(nextPosition.z));
+            int newX = (int)Mathf.Round(nextPosition.x);
+            int newZ = (int)Mathf.Round(nextPosition.z);
 
             // Check if the new postion is on the board and free
             if (CheckNewPositionisFree(newX, newZ)) SetNewPosition(newX, newZ);
@@ -289,9 +413,9 @@ public class DD_Unit : DD_BaseObject
                 if (unitHeading == Heading.west) nextPosition = new Vector3(currentPosition.x - 1, 0, currentPosition.z);
 
                 // Round off next Pos
-                nextPosition = new Vector3((int)nextPosition.x, 0, (int)nextPosition.z);
-                int newX = (int)nextPosition.x;
-                int newZ = (int)nextPosition.z;
+                nextPosition = new Vector3((int)Mathf.Round(nextPosition.x), 0, (int)Mathf.Round(nextPosition.z));
+                int newX = (int)Mathf.Round(nextPosition.x);
+                int newZ = (int)Mathf.Round(nextPosition.z);
 
                 // Check if the new postion is on the board and free
                 if (CheckNewPositionisFree(newX, newZ)) SetNewPosition(newX, newZ);
@@ -314,9 +438,9 @@ public class DD_Unit : DD_BaseObject
             if (direction == 3) nextPosition = new Vector3(currentPosition.x, 0, currentPosition.z + 1);
 
             // Round off next Pos
-            nextPosition = new Vector3((int)nextPosition.x, 0, (int)nextPosition.z);
-            int newX = (int)nextPosition.x;
-            int newZ = (int)nextPosition.z;
+            nextPosition = new Vector3((int)Mathf.Round(nextPosition.x), 0, (int)Mathf.Round(nextPosition.z));
+            int newX = (int)Mathf.Round(nextPosition.x);
+            int newZ = (int)Mathf.Round(nextPosition.z);
 
             // Check if the new postion is on the board and free
             if (CheckNewPositionisFree(newX, newZ)) SetNewPosition(newX, newZ);
