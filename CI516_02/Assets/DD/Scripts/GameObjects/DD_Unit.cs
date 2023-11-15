@@ -119,37 +119,50 @@ public class DD_Unit : DD_BaseObject
         if (isMoving) return;
         if (isDepositing) return;
 
-        // Check Resource in Range 
-        if (Vector3.Distance(currentPosition, nearestResourcePosition) < resourceRange)
+        if (Vector3.Distance(currentPosition, nearestEnemyPosition) < enemyChaseRange)
         {
-            targetPosition = nearestResourcePosition;
+            targetPosition = nearestEnemyPosition;
             unitState = States.chase;
+
         }
-
-        if (Vector3.Distance(currentPosition, nearestResourcePosition) < stopRange)
-            unitState = States.idle;
-
-        // wander if out of range 
-        if (Vector3.Distance(currentPosition, nearestResourcePosition) > resourceRange)
-            unitState = States.wander;
-
-
-        // Harvest Resource if close
-        if (Vector3.Distance(nearestResourcePosition, currentPosition) <= stopRange)
-            unitState = States.harvest;
-
-        // Depoit Resource when full
-        if (resourceCarrying > resourceLimit - 0.1F)
-            unitState = States.deposit;
-
-
-        // is the path blocked and not wandering
-        if (unitState != States.wander)
+        if (Vector3.Distance(currentPosition, nearestEnemyPosition) < attackRange)
         {
-            if (obstacleAhead)
+            unitState = States.attack;
+        }
+        else
+        {
+            // Check Resource in Range 
+            if (Vector3.Distance(currentPosition, nearestResourcePosition) < resourceRange)
             {
-                unitState = States.roam;
-                obstacleAhead = false;
+                targetPosition = nearestResourcePosition;
+                unitState = States.chase;
+            }
+
+            if (Vector3.Distance(currentPosition, nearestResourcePosition) < stopRange)
+                unitState = States.idle;
+
+            // wander if out of range 
+            if ((Vector3.Distance(currentPosition, nearestResourcePosition) > resourceRange) && (Vector3.Distance(currentPosition, nearestEnemyPosition) > enemyChaseRange))
+                unitState = States.wander;
+
+
+            // Harvest Resource if close
+            if (Vector3.Distance(nearestResourcePosition, currentPosition) <= stopRange)
+                unitState = States.harvest;
+
+            // Depoit Resource when full
+            if (resourceCarrying > resourceLimit - 0.1F)
+                unitState = States.deposit;
+
+
+            // is the path blocked and not wandering
+            if (unitState != States.wander)
+            {
+                if (obstacleAhead)
+                {
+                    unitState = States.roam;
+                    obstacleAhead = false;
+                }
             }
         }
     }//----

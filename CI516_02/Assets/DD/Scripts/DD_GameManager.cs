@@ -61,7 +61,7 @@ public class DD_GameManager : MonoBehaviour
     private void FixedUpdate() // Capped at 50 FPS
     {
         DisplayGameData();
-        SetTargets();
+        //SetTargets();
     }//---
 
   
@@ -176,7 +176,7 @@ public class DD_GameManager : MonoBehaviour
     //  ************************** Older Functions Not Currently Used ****************************
 
     // ---------------------------------------------------------------------
-    private void SetTargets()
+    /*private void SetTargets()
     {
         // Yellow Marker
         mainTargetPos = new(playerInputManager.leftClickPostion.x, 0, playerInputManager.leftClickPostion.y);
@@ -204,7 +204,7 @@ public class DD_GameManager : MonoBehaviour
             redTargetMarker.transform.position = new(playerInputManager.rightClickPostion.x, -0.9F, playerInputManager.rightClickPostion.y);
         }
 
-    }//-----
+    }//-----*/
 
 
     // ---------------------------------------------------------------------

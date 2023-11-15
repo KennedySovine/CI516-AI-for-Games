@@ -128,6 +128,7 @@ MonoBehaviour:
   attackRange: 5
   attackCoolDown: 2
   attackPF: {fileID: 7542795780032822868, guid: aac069fcb5f172f43a45328ef4ea897f, type: 3}
+  friendsIDs: 
 --- !u!114 &7263510745834353569
 MonoBehaviour:
   m_ObjectHideFlags: 0
