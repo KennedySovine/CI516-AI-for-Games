@@ -22,6 +22,9 @@ public class DD_UnitPlayerControl : MonoBehaviour
     private GameObject highlight;
     public bool isSelected = false;
 
+    private float targetTime = 10.0f;
+    private float timer = 0.0f;
+
 
     // ---------------------------------------------------------------------
     private void Start()
@@ -48,14 +51,42 @@ public class DD_UnitPlayerControl : MonoBehaviour
     {
         if (unitScript.isPlayerControlled == false)  return;
         if (unitScript.isMoving) return;
- 
-
+        if (unitScript.isDepositing) return;
 
         if (isSelected) // The unit has been selected by the player
         {
-            // Chase Player Set Target Pos         
+            //have object no longer be under control after 10s.
+            if (unitScript.unitState == States.idle)
+            {
+                if (timer >= targetTime)
+                {
+                    isSelected = false;
+                    unitScript.unitState = States.wander;
+                }
+                else
+                {
+                    //timer of 10 seconds
+                    timer += Time.deltaTime;
+                }
+                //Debug.Log(targetTime - timer);
+            }
+            else if (timer != 0.0f)
+            {
+                timer = 0.0f;
+            }
+
+            //Debug.Log(unitScript.unitState);
+            // Chase Player Set Target Pos
+            playerSetTarget = gameManager.playerSetTargetPos;
+            unitScript.targetPosition = playerSetTarget;
+            unitScript.unitState = States.chase;
+            
          
-            // Stop when close                     
+            // Stop when close
+            if (Vector3.Distance(unitScript.targetPosition, unitScript.currentPosition) < unitScript.stopRange)
+            {
+                unitScript.unitState = States.idle;
+            }
 
         }
         else // Gather resources
@@ -70,18 +101,35 @@ public class DD_UnitPlayerControl : MonoBehaviour
             if (Vector3.Distance(unitScript.currentPosition, unitScript.nearestResourcePosition) < unitScript.stopRange)
                 unitScript.unitState = States.idle;
 
-         
-            
+            if (Vector3.Distance(unitScript.currentPosition, unitScript.nearestResourcePosition) > unitScript.resourceRange)
+                unitScript.unitState = States.wander;
+
             // Harvest
+            if (Vector3.Distance(unitScript.nearestResourcePosition, unitScript.currentPosition) <= unitScript.stopRange)
+                unitScript.unitState = unitScript.unitState = States.harvest;
 
             // Depoosit
+            if (unitScript.resourceCarrying > unitScript.resourceLimit - 0.1F)
+                unitScript.unitState = States.deposit;
 
             //Combat here?
+            if (Vector3.Distance(unitScript.nearestEnemyPosition, unitScript.currentPosition) < unitScript.enemyChaseRange)
+                unitScript.AttackEnemy();
         }
-     
+
         // Combat here?
+        if (Vector3.Distance(unitScript.nearestEnemyPosition, unitScript.currentPosition) < unitScript.enemyChaseRange)
+            unitScript.AttackEnemy();
 
         // Obstacle Avoid
+        if (unitScript.unitState != States.wander)
+        {
+            if (unitScript.obstacleAhead)
+            {
+                unitScript.unitState = States.roam;
+                unitScript.obstacleAhead = false;
+            }
+        }
 
        
     }//-----

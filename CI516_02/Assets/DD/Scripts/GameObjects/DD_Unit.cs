@@ -122,7 +122,6 @@ public class DD_Unit : DD_BaseObject
         // Enemy Target may need resetting if not targets exist
 
         if (isPlayerControlled) return;
-
         if (isMoving) return;
         if (isDepositing) return;
 
