@@ -16,6 +16,7 @@ public class DD_Unit : DD_BaseObject
     public DD_GameManager gameManager;
     public int unitID = -1;
     public States unitState = States.idle;
+    public bool isPlayerControlled = false;
 
     // Position Variables
     [Header("Unit Positions")]
@@ -27,7 +28,7 @@ public class DD_Unit : DD_BaseObject
 
     [Header("Movement")]
     public float speed = 1;
-    bool isMoving = false;
+    public bool isMoving = false;
     public float fleeRange = 20;
     public float stopRange = 2;
     // Wander vars
@@ -69,7 +70,11 @@ public class DD_Unit : DD_BaseObject
 
         // Set initial states
         unitHeading = (Heading)Random.Range(0, 4);
-        unitState = States.wander;
+      
+        if (!isPlayerControlled)
+            unitState = States.wander;
+        else 
+            unitState = States.idle;
 
 
         // Set Teams to ignore for Attacks
@@ -114,20 +119,17 @@ public class DD_Unit : DD_BaseObject
     // ---------------------------------------------------------------------
     private void StateManager()
     {
-        // Currently set for Resource Gathering not Combat
+        // Enemy Target may need resetting if not targets exist
+
+        if (isPlayerControlled) return;
 
         if (isMoving) return;
         if (isDepositing) return;
 
-        if (Vector3.Distance(currentPosition, nearestEnemyPosition) < enemyChaseRange)
+        // Check if enemy is close
+        if (Vector3.Distance(nearestEnemyPosition, currentPosition) < enemyChaseRange)
         {
-            targetPosition = nearestEnemyPosition;
-            unitState = States.chase;
-
-        }
-        if (Vector3.Distance(currentPosition, nearestEnemyPosition) < attackRange)
-        {
-            unitState = States.attack;
+            AttackEnemy();
         }
         else
         {
@@ -142,7 +144,7 @@ public class DD_Unit : DD_BaseObject
                 unitState = States.idle;
 
             // wander if out of range 
-            if ((Vector3.Distance(currentPosition, nearestResourcePosition) > resourceRange) && (Vector3.Distance(currentPosition, nearestEnemyPosition) > enemyChaseRange))
+            if (Vector3.Distance(currentPosition, nearestResourcePosition) > resourceRange)
                 unitState = States.wander;
 
 
@@ -154,15 +156,15 @@ public class DD_Unit : DD_BaseObject
             if (resourceCarrying > resourceLimit - 0.1F)
                 unitState = States.deposit;
 
+        }
 
-            // is the path blocked and not wandering
-            if (unitState != States.wander)
+        // is the path blocked and not wandering
+        if (unitState != States.wander)
+        {
+            if (obstacleAhead)
             {
-                if (obstacleAhead)
-                {
-                    unitState = States.roam;
-                    obstacleAhead = false;
-                }
+                unitState = States.roam;
+                obstacleAhead = false;
             }
         }
     }//----
@@ -171,8 +173,10 @@ public class DD_Unit : DD_BaseObject
 
     //                   ****************   COMBAT ***************************
     // ---------------------------------------------------------------------
-    private void AttackEnemy()
+    public void AttackEnemy()
     {
+        if (!isAlive) return;
+
         if (!nearestEnemy)
         {
             nearestEnemyPosition = new(-50, -50, -50); // out of range

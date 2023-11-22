@@ -124,7 +124,7 @@ MonoBehaviour:
   teamMembersTotal: 10
   activeTeamMembers: 0
   teamResources: 50
-  teamPosition: {x: 10, y: 25}
+  teamPosition: {x: 30, y: 50}
   spawnDirection: 2
   unitSpawnDistance: 3
   friendlyTeams: 
@@ -132,3 +132,5 @@ MonoBehaviour:
   unitCost: 5
   teamUnits: []
   spawnCoolDownTime: 5
+  squad: []
+  squadActive: 0

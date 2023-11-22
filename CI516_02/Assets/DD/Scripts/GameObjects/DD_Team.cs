@@ -32,6 +32,10 @@ public class DD_Team : MonoBehaviour
     private float nextSpawnTime = 0.0f;
     private DD_GameManager gameManager;
 
+    [Header("Squad Stuff")]
+    public List<GameObject> squad = new();
+    public bool squadActive = false;
+
     // ---------------------------------------------------------------------
     private void Start()
     {
@@ -93,10 +97,12 @@ public class DD_Team : MonoBehaviour
             unitScript.isAlive = true;
             unitScript.health = newUnit.GetComponent<DD_UnitHealth>().maxHealth;
             activeTeamMembers++;
-            gameManager.activeUnits.Add(newUnit);          
+            gameManager.activeUnits.Add(newUnit);
+
+            // reduce resesource & set next spawn time
+            teamResources -= unitCost;
         }
-        // reduce resesource & set next spawn time
-        teamResources -= unitCost;
+      
         nextSpawnTime = Time.time + spawnCoolDownTime;
     }//-----
 

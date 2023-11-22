@@ -13,21 +13,27 @@ public class DD_PlayerInputManager : MonoBehaviour
     public float camMoveSpeed = 10f;
 
     // Mouse Select
-    public Vector2 leftClickPostion = new(99,99);
-    public Vector2 rightClickPostion = new(99, 99);
-    public Vector2 slotClicked = Vector2.zero;
-    
+    public Vector2 leftClickPosition = new(-1, -1);
+    public Vector2 rightClickPosition = new(-1, -1);
+    // public Vector2 slotClicked = Vector2.zero;
+
+    public Vector2 leftDownPosition = new(-1, -1);
+    public Vector2 leftUpPosition = new(-1, -1);
+    public bool mouseLUP = false;
+    public bool mouseLDown = false;
+    public bool mouseRDown = false;
+
     public int lastKeyPressed = 0;
- 
+
 
     // ---------------------------------------------------------------------
     void Update()
-    {       
+    {
         GetPlayerMouseClick();
         CameraControl();
     }//-----
 
-  
+
 
 
     // ---------------------------------------------------------------------
@@ -65,22 +71,46 @@ public class DD_PlayerInputManager : MonoBehaviour
                 if (Mathf.Round(rayHit.point.x) > 0 && Mathf.Round(rayHit.point.x) < 100
                     && Mathf.Round(rayHit.point.z) > 0 && Mathf.Round(rayHit.point.z) < 100)
                 {
+                    if (Input.GetMouseButtonDown(0)) // Left Button                   
+                        leftClickPosition = new((int)rayHit.point.x, (int)rayHit.point.z);
 
-                    if (Input.GetMouseButtonDown(0)) // Left Button
+                    if (Input.GetMouseButtonDown(1)) // Right Button            
                     {
-                        leftClickPostion = new((int)rayHit.point.x, (int)rayHit.point.z);
-                      //  print("LM - " + leftClickPostion);
-
-                    }
-
-                    if (Input.GetMouseButtonDown(1)) // Right Button
-                    {
-                        rightClickPostion = new((int)rayHit.point.x, (int)rayHit.point.z);
-                       // print("RM - " + rightClickPostion);
+                        rightClickPosition = new((int)rayHit.point.x, (int)rayHit.point.z);
+                        mouseRDown = true;
                     }
                 }
             }
         }
+
+        if (Input.GetMouseButton(0)) // Left Mouse still held Down
+        {
+            mouseLUP = false;
+            mouseLDown = true;
+            // Create Ray cast source and target 
+            Ray rayCamToMousePostion = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+            // cast Ray 100m and store data in _rh_hit)
+            if (Physics.Raycast(rayCamToMousePostion, out RaycastHit rayHit, 100F))
+            {
+                // Set Position LM Clicked id on the gameBoard 
+                if (Mathf.Round(rayHit.point.x) > 0 && Mathf.Round(rayHit.point.x) < 100
+                    && Mathf.Round(rayHit.point.z) > 0 && Mathf.Round(rayHit.point.z) < 100)
+                    leftDownPosition = new((int)rayHit.point.x, (int)rayHit.point.z);
+            }
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            mouseLUP = true;
+            mouseLDown = false;
+        }
+
+        if (Input.GetMouseButtonUp(1))
+        {
+            mouseRDown = false;
+        }
+
     }//------
 
 

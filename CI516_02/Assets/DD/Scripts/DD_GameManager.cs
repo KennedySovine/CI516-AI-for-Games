@@ -14,30 +14,26 @@ public class DD_GameManager : MonoBehaviour
     private DD_PlayerInputManager playerInputManager;
 
     [Header("Unit Targets")]
-    public Vector3 mainTargetPos = new(-50,-50,-50);
-    public Vector3 secondaryTargetPos = new(-50,50,-50);
+    public Vector3 playerSetTargetPos = new(-50, 50, -50);
 
     [Header("Game Objects")]
-    // Teams
     public GameObject[] Teams = new GameObject[2];
-
-    // objects
     public GameObject markerPrefab;
     public GameObject redMarkerPrefab;
-    public GameObject unitPrefab;
+    private GameObject selectionMarker;
+    private GameObject redTargetMarker;
     public GameObject obstaclePrefab;
     public GameObject objectParent;
-    public GameObject unitParent;
-    private GameObject targetMarker;
-    private GameObject redTargetMarker;
     public GameObject resourcePF;
     public int resourcesToSpawn = 100;
     public Vector2 objectsToSpawn = new(500, 1000);
-    public int unitsToSpawn = 1000;
+
+    // Lists of Active Objects
     private readonly List<GameObject> activeTeams = new();
     public List<GameObject> activeUnits = new();
-    public   List<GameObject> activeResources = new();
-
+    public List<GameObject> activeResources = new();
+    public List<GameObject> selectedPlayerUnits = new();
+    private bool playerMarkerActive = false;
 
     // UI
     [Header("Game UI")]
@@ -61,17 +57,135 @@ public class DD_GameManager : MonoBehaviour
     private void FixedUpdate() // Capped at 50 FPS
     {
         DisplayGameData();
-        //SetTargets();
+        SetSelectionMarkers();
     }//---
 
-  
+
+
     // ---------------------------------------------------------------------
     private void AddInitialGameObjects()
-    {    
+    {
         AddTeams();
         AddObstacles((int)objectsToSpawn.x, (int)objectsToSpawn.y);
-        AddInitialResourceObjects(resourcesToSpawn);   
+        AddInitialResourceObjects(resourcesToSpawn);
     }//------
+
+
+    // ---------------------------------------------------------------------
+    private void SelectUnits()
+    {
+        selectedPlayerUnits.Clear(); // clear last selection
+
+        if (selectedPlayerUnits.Count == 0) // Deselect units
+            foreach (GameObject unit in activeUnits)
+                if (unit.GetComponent<DD_UnitPlayerControl>())
+                    unit.GetComponent<DD_UnitPlayerControl>().isSelected = false;
+
+
+        // find units within these position based on mouse clicks
+
+        // Get the player clicks
+        int startCol = (int)playerInputManager.leftClickPosition.x;
+        int startRow = (int)playerInputManager.leftClickPosition.y;
+        int endCol = (int)playerInputManager.leftDownPosition.x;
+        int endRow = (int)playerInputManager.leftDownPosition.y;
+
+
+        // ensure position are on the board
+        if (startCol < 0 || startCol > playArea.GetLength(1)) return;
+        if (startRow < 0 || startRow > playArea.GetLength(0)) return;
+        if (endCol < 0 || endCol > playArea.GetLength(1)) return;
+        if (endRow < 0 || endRow > playArea.GetLength(0)) return;
+
+
+        // Swap start and end if end is lower
+        if (endCol < startCol) (startCol, endCol) = (endCol, startCol);
+        if (endRow < startRow) (startRow, endRow) = (endRow, startRow);
+
+
+        // Loop through all selected slots to find a PC unit
+        for (int col = startCol; col <= endCol; col++)
+        {
+            for (int row = startRow; row <= endRow; row++)
+            {
+                if (playArea[row, col] && playArea[row, col].GetComponent<DD_Unit>()) // Ensure the object is a unit
+                {
+                    if (playArea[row, col].GetComponent<DD_Unit>().team.teamID == 1) // the Player controlled team
+                        selectedPlayerUnits.Add(playArea[row, col]);
+                }
+            }
+        }
+        // print(selectedPlayerUnits.Count + " units selected");
+
+        // Select the units
+        if (selectedPlayerUnits.Count > 0)
+            foreach (GameObject unit in selectedPlayerUnits)
+                unit.GetComponent<DD_UnitPlayerControl>().isSelected = true;
+    }//-----
+
+
+
+    // ---------------------------------------------------------------------
+    private void SetSelectionMarkers()
+    {
+        //place marker gameobject 
+        if (selectionMarker == null) // if there is no marker already in the scene add one        
+            selectionMarker = (GameObject)Instantiate(markerPrefab, new(playerInputManager.leftDownPosition.x, -0.9F, playerInputManager.leftDownPosition.y), transform.rotation);
+
+        if (playerInputManager.mouseLDown)
+        {
+            selectedPlayerUnits.Clear();
+
+            playerMarkerActive = true;
+
+            int startX = (int)Mathf.Round(playerInputManager.leftClickPosition.x);
+            int startZ = (int)Mathf.Round(playerInputManager.leftClickPosition.y);
+            int endX = (int)Mathf.Round(playerInputManager.leftDownPosition.x);
+            int endZ = (int)Mathf.Round(playerInputManager.leftDownPosition.y);
+
+            float width = startX - endX;
+            float height = startZ - endZ;
+
+            // Scale Marker with mouse drag
+            selectionMarker.transform.localScale = new(width, 0.01f, height);
+            selectionMarker.transform.position = new(endX + width / 2, 0.1f, endZ + height / 2);
+            playerSetTargetPos = selectionMarker.transform.position;
+        }
+        if (playerInputManager.mouseLUP && playerMarkerActive) // move off the board when mouse button up
+        {
+            SelectUnits();
+            playerMarkerActive = false;
+        }
+
+        if (!playerMarkerActive)
+        {
+            selectionMarker.transform.position = new(-2, 0, 0);
+            selectionMarker.transform.localScale = new(1, 0.01F, 1);
+        }
+
+
+        //---------------------------------------------------------------
+        // Red Marker for Target Setting
+
+        if (playerInputManager.mouseRDown)
+        {
+            playerSetTargetPos = new(playerInputManager.rightClickPosition.x, 0, playerInputManager.rightClickPosition.y);
+
+            //place marker gameobject on position where mouse was clicked
+            if (redTargetMarker == null)
+            {// if there is no marker already in the scene
+                redTargetMarker = (GameObject)Instantiate(redMarkerPrefab, new(playerInputManager.rightClickPosition.x, -0.9F, playerInputManager.rightClickPosition.y), transform.rotation);
+            }
+            else
+            {
+                redTargetMarker.transform.position = new(playerInputManager.rightClickPosition.x, -0.9F, playerInputManager.rightClickPosition.y);
+            }
+        }
+
+    }//-----
+
+
+
 
 
     // ---------------------------------------------------------------------
@@ -124,7 +238,7 @@ public class DD_GameManager : MonoBehaviour
         }
     }//------   
 
-   
+
 
     // ---------------------------------------------------------------------
     private void AddObstacles(int min, int max)
@@ -155,9 +269,6 @@ public class DD_GameManager : MonoBehaviour
         // Left Hand Text Window
         LeftTextWindow.text = "Game States \n ==================";
 
-       // LeftTextWindow.text += "L:  " + playerInputManager.leftClickPostion;
-       // LeftTextWindow.text += "  R:  " + playerInputManager.rightClickPostion;
-
         // Display Team Stats
         foreach (GameObject team in activeTeams)
         {
@@ -172,41 +283,7 @@ public class DD_GameManager : MonoBehaviour
 
 
 
-
     //  ************************** Older Functions Not Currently Used ****************************
-
-    // ---------------------------------------------------------------------
-    /*private void SetTargets()
-    {
-        // Yellow Marker
-        mainTargetPos = new(playerInputManager.leftClickPostion.x, 0, playerInputManager.leftClickPostion.y);
-
-        //place marker gameobject on position where mouse was clicked
-        if (targetMarker == null)
-        {// if there is no marker already in the scene
-            targetMarker = (GameObject)Instantiate(markerPrefab, new(playerInputManager.leftClickPostion.x, -0.9F, playerInputManager.leftClickPostion.y), transform.rotation);
-        }
-        else
-        {
-            targetMarker.transform.position = new(playerInputManager.leftClickPostion.x, -0.9F, playerInputManager.leftClickPostion.y);
-        }
-
-        // Red Marker
-        secondaryTargetPos = new(playerInputManager.rightClickPostion.x, 0, playerInputManager.rightClickPostion.y);
-
-        //place marker gameobject on position where mouse was clicked
-        if (redTargetMarker == null)
-        {// if there is no marker already in the scene
-            redTargetMarker = (GameObject)Instantiate(redMarkerPrefab, new(playerInputManager.rightClickPostion.x, -0.9F, playerInputManager.rightClickPostion.y), transform.rotation);
-        }
-        else
-        {
-            redTargetMarker.transform.position = new(playerInputManager.rightClickPostion.x, -0.9F, playerInputManager.rightClickPostion.y);
-        }
-
-    }//-----*/
-
-
     // ---------------------------------------------------------------------
     private void ChangeStateOnKeyPress()
     {
@@ -251,38 +328,9 @@ public class DD_GameManager : MonoBehaviour
 
 
 
-    // ---------------------------------------------------------------------
-    void AddTestUnit()
-    {
-        // Specific Test Start Positions
-        int newZ = 5; int newX = 5;
-        if (playArea[newZ, newX] == null) playArea[newZ, newX] = (GameObject)Instantiate(unitPrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
-
-    }//----
 
 
-    // ---------------------------------------------------------------------
-    void AddUnits(int amountOfUnits)
-    {
-        for (int i = 0; i < amountOfUnits; i++)
-        {
-            int newZ = Random.Range(0, playArea.GetLength(0)); // Limit to array length
-            int newX = Random.Range(0, playArea.GetLength(1));
 
-            // check if space is empty
-            if (playArea[newZ, newX] == null) // Add unit to playArea array and spawn
-            {
-                playArea[newZ, newX] = (GameObject)Instantiate(unitPrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
-                // child to Objects to keep Hierachy Organised
-                playArea[newZ, newX].transform.parent = unitParent.transform;
-
-                activeUnits.Add(playArea[newZ, newX]);
-            }
-        }
-
-        print("\nActive units in list: " + activeUnits.Count);
-
-    }//----
 
     // ---------------------------------------------------------------------
     private void AddRectangle(int xStart, int zStart, int width, int height, bool isFilled)

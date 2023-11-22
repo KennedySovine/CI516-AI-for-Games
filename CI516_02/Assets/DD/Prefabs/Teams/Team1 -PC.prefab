@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2278763039184097644}
   - component: {fileID: 5363294141948571412}
   m_Layer: 0
-  m_Name: Team3
+  m_Name: Team1 -PC
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -118,17 +118,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afcb03e8d9e55a14fb82022b09d1181a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  teamColor: {r: 1, g: 0.85616744, b: 0, a: 1}
-  teamID: 0
-  teamName: Team 3
+  teamColor: {r: 0.98894453, g: 0, b: 1, a: 1}
+  teamID: -1
+  teamName: Team 1  - PC
   teamMembersTotal: 10
   activeTeamMembers: 0
   teamResources: 50
-  teamPosition: {x: 70, y: 20}
+  teamPosition: {x: 15, y: 15}
   spawnDirection: 1
   unitSpawnDistance: 3
   friendlyTeams: 
-  unit: {fileID: 214879434611196659, guid: 7ead9036dc8621840a2d0a5f800482ce, type: 3}
+  unit: {fileID: 214879434611196659, guid: 5a6836ff8b71b6f4a8f253d6f67a16c5, type: 3}
   unitCost: 5
   teamUnits: []
   spawnCoolDownTime: 5

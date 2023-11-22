@@ -49,6 +49,8 @@ public class DD_UnitHealth : MonoBehaviour
             unitScript.team.activeTeamMembers--;
             unitScript.gameManager.activeUnits.Remove(unitScript.gameObject);
             unitScript.health = maxHealth;
+            // Deselect unit
+            if(unitScript.isPlayerControlled) GetComponent<DD_UnitPlayerControl>().isSelected = false;
 
             // Deactivate unit
             unitScript.isAlive = false;
@@ -60,11 +62,8 @@ public class DD_UnitHealth : MonoBehaviour
     // ---------------------------------------------------------------------
     public void Damage(float damage) // Damage Receiver
     {
-        unitScript.health -= damage;
-        // GameObject.Instantiate(hitText, Vector3.zero, Quaternion.identity);
-
-        print("taking damage");
-
+        unitScript.health -= damage;     
+ 
     }//-----
 
 

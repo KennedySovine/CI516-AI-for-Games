@@ -11,10 +11,11 @@ GameObject:
   - component: {fileID: 8515936519193038846}
   - component: {fileID: 5573208990883223886}
   - component: {fileID: 1427460760893361799}
+  - component: {fileID: 4679721092501007960}
   - component: {fileID: 1678302711030127796}
   - component: {fileID: 7263510745834353569}
   m_Layer: 0
-  m_Name: Unit_PF
+  m_Name: Unit_Player_PF
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -86,6 +87,23 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4679721092501007960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 214879434611196659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aef22d9b6f3422446b97901e6f375f78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerSetTarget: {x: 0, y: 0, z: 0}
+  squadID: -1
+  squadPattern: 0
+  isSquadLeader: 0
+  isSelected: 0
 --- !u!114 &1678302711030127796
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -106,14 +124,13 @@ MonoBehaviour:
   gameManager: {fileID: 0}
   unitID: -1
   unitState: 0
-  isPlayerControlled: 0
+  isPlayerControlled: 1
   basePosition: {x: 0, y: 0, z: 0}
   targetPosition: {x: 0, y: 0, z: 0}
   currentPosition: {x: 5, y: 0, z: 8}
   startPosition: {x: 0, y: 0, z: 0}
   nextPosition: {x: 0, y: 0, z: 0}
-  speed: 5
-  isMoving: 0
+  speed: 3
   fleeRange: 20
   stopRange: 2
   obstacleAhead: 0
