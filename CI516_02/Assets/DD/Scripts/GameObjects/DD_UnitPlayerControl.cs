@@ -3,6 +3,7 @@
 // -------------------- David Dorrington, UoB Games, 2023
 // ---------------------------------------------------------------------
 
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -58,6 +59,12 @@ public class DD_UnitPlayerControl : MonoBehaviour
         }
         else // Wander, gather and fight
         {
+            //unitScript.unitState = States.wander;
+            //Vector3 nearestWP = gameManager.ai.GetNearestWaypointPos(unitScript.currentPosition);
+            Vector3[] nearestWPs = gameManager.ai.GetNearestWaypointstoPos(unitScript.currentPosition, 2);
+            unitScript.targetPosition = nearestWPs[Random.Range(0, 1)];
+            unitScript.unitState = States.chase;
+            StartCoroutine(WPtoWander());
             unitScript.unitState = States.wander;
 
             // Check Resource in Range 
@@ -76,8 +83,8 @@ public class DD_UnitPlayerControl : MonoBehaviour
                 unitScript.unitState = States.idle;
 
             // wander if out of range 
-            if (Vector3.Distance(unitScript.currentPosition, unitScript.nearestResourcePosition) > unitScript.resourceRange)
-                unitScript.unitState = States.wander;
+            //if (Vector3.Distance(unitScript.currentPosition, unitScript.nearestResourcePosition) > unitScript.resourceRange)
+                //unitScript.unitState = States.wander;
 
             // Harvest Resource if close
             if (Vector3.Distance(unitScript.nearestResourcePosition, unitScript.currentPosition) <= unitScript.stopRange)
@@ -124,6 +131,18 @@ public class DD_UnitPlayerControl : MonoBehaviour
         highlight.transform.SetParent(transform);
         highlight.SetActive(false);
     }//----
+
+    IEnumerator WPtoWander()
+    {
+        //Print the time of when the function is first called.
+        //Debug.Log("Started Coroutine at timestamp : " + Time.time);
+
+        //yield on a new YieldInstruction that waits for 5 seconds.
+        yield return new WaitForSeconds(5);
+
+        //After we have waited 5 seconds print the time again.
+        //Debug.Log("Finished Coroutine at timestamp : " + Time.time);
+    }
 
 
 

@@ -127,7 +127,10 @@ public class DD_Unit : DD_BaseObject
         // Check if enemy is close
         if (Vector3.Distance(nearestEnemyPosition, currentPosition) < enemyChaseRange)
         {
-            AttackEnemy();
+            if (gameManager.ai.CheckTargetInLineOfSight(currentPosition, nearestEnemyPosition))
+            {
+                AttackEnemy();
+            }
         }
         else
         {
@@ -398,7 +401,7 @@ public class DD_Unit : DD_BaseObject
         if (Vector3.Distance(basePosition, currentPosition) > stopRange && !isDepositing)
         {
             targetPosition = basePosition;
-            ChaseDirect(false);
+            WaypointMoveToTarget(targetPosition);
         }
         else // Unit is Close to home
         {
