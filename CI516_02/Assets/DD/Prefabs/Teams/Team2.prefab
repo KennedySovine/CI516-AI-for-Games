@@ -124,7 +124,7 @@ MonoBehaviour:
   teamMembersTotal: 10
   activeTeamMembers: 0
   teamResources: 50
-  teamPosition: {x: 30, y: 50}
+  teamPosition: {x: 85, y: 85}
   spawnDirection: 2
   unitSpawnDistance: 3
   friendlyTeams: 

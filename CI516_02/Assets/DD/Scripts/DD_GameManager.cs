@@ -27,6 +27,9 @@ public class DD_GameManager : MonoBehaviour
     public GameObject resourcePF;
     public int resourcesToSpawn = 100;
     public Vector2 objectsToSpawn = new(500, 1000);
+    public DD_Levels levelData;
+    public DD_AI_Class ai;
+
 
     // Lists of Active Objects
     private readonly List<GameObject> activeTeams = new();
@@ -44,12 +47,16 @@ public class DD_GameManager : MonoBehaviour
     {
         // Create Array for play area
         playArea = new GameObject[100, 100]; // rows z, cols x
+        playerInputManager = GetComponent<DD_PlayerInputManager>();
+        levelData = GetComponent<DD_Levels>();
+        ai = GetComponent<DD_AI_Class>();
+
     }//------
 
     // ---------------------------------------------------------------------
     private void Start()
     {
-        playerInputManager = GetComponent<DD_PlayerInputManager>();
+
         AddInitialGameObjects();
     }//---
 
@@ -65,10 +72,46 @@ public class DD_GameManager : MonoBehaviour
     // ---------------------------------------------------------------------
     private void AddInitialGameObjects()
     {
+        LoadLevel();
+
         AddTeams();
-        AddObstacles((int)objectsToSpawn.x, (int)objectsToSpawn.y);
+
+        //AddObstacles((int)objectsToSpawn.x, (int)objectsToSpawn.y);
         AddInitialResourceObjects(resourcesToSpawn);
     }//------
+
+
+
+
+    // ---------------------------------------------------------------------
+    private void LoadLevel()
+    {
+        // Loop through all array slots - Spawn Objects bases on number
+        for (int row = 0; row < levelData.level1.GetLength(0); row++)
+        {
+            for (int col = 0; col < levelData.level1.GetLength(1); col++)
+            {
+                int newX = col;
+                int newZ = levelData.level1.GetLength(0) - 1 - row;
+
+                // check if space is empty
+                if (playArea[newZ, newX] == null)
+                {
+                    if (levelData.level1[row, col] == 1) // Obstacle
+                    {
+                        GameObject newObstacle = Instantiate(obstaclePrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+                        newObstacle.transform.parent = objectParent.transform;
+
+                        playArea[newZ, newX] = newObstacle;
+                    }
+                }
+            }
+        }
+
+    }//----
+
+
+
 
 
     // ---------------------------------------------------------------------
@@ -76,11 +119,10 @@ public class DD_GameManager : MonoBehaviour
     {
         selectedPlayerUnits.Clear(); // clear last selection
 
-        if (selectedPlayerUnits.Count == 0) // Deselect units
+        if (selectedPlayerUnits.Count == 0) // Deselect unit
             foreach (GameObject unit in activeUnits)
                 if (unit.GetComponent<DD_UnitPlayerControl>())
                     unit.GetComponent<DD_UnitPlayerControl>().isSelected = false;
-
 
         // find units within these position based on mouse clicks
 
@@ -90,18 +132,15 @@ public class DD_GameManager : MonoBehaviour
         int endCol = (int)playerInputManager.leftDownPosition.x;
         int endRow = (int)playerInputManager.leftDownPosition.y;
 
-
         // ensure position are on the board
         if (startCol < 0 || startCol > playArea.GetLength(1)) return;
         if (startRow < 0 || startRow > playArea.GetLength(0)) return;
         if (endCol < 0 || endCol > playArea.GetLength(1)) return;
         if (endRow < 0 || endRow > playArea.GetLength(0)) return;
 
-
         // Swap start and end if end is lower
         if (endCol < startCol) (startCol, endCol) = (endCol, startCol);
         if (endRow < startRow) (startRow, endRow) = (endRow, startRow);
-
 
         // Loop through all selected slots to find a PC unit
         for (int col = startCol; col <= endCol; col++)
@@ -149,7 +188,7 @@ public class DD_GameManager : MonoBehaviour
             // Scale Marker with mouse drag
             selectionMarker.transform.localScale = new(width, 0.01f, height);
             selectionMarker.transform.position = new(endX + width / 2, 0.1f, endZ + height / 2);
-            playerSetTargetPos = selectionMarker.transform.position;
+            // playerSetTargetPos = selectionMarker.transform.position;
         }
         if (playerInputManager.mouseLUP && playerMarkerActive) // move off the board when mouse button up
         {
@@ -226,7 +265,7 @@ public class DD_GameManager : MonoBehaviour
             {
                 // Add block object to array
 
-                GameObject newResource = (GameObject)Instantiate(resourcePF, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+                GameObject newResource = Instantiate(resourcePF, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
 
                 playArea[newZ, newX] = newResource;
 
@@ -254,7 +293,7 @@ public class DD_GameManager : MonoBehaviour
             if (playArea[newZ, newX] == null)
             {
                 // Add block object to array
-                playArea[newZ, newX] = (GameObject)Instantiate(obstaclePrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
+                playArea[newZ, newX] = Instantiate(obstaclePrefab, new Vector3((float)newX, -0.5f, (float)newZ), transform.rotation);
 
                 // child to Objects to keep Hierachy Organised
                 playArea[newZ, newX].transform.parent = objectParent.transform;

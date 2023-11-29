@@ -273,18 +273,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 038d297f6398d2646ac1678b5704b521, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainTargetPos: {x: 0, y: 0, z: 0}
-  secondaryTargetPos: {x: 0, y: 0, z: 0}
+  playerSetTargetPos: {x: -50, y: 50, z: -50}
   Teams:
-  - {fileID: 2337509756319959829, guid: 8dc881b262e53c948badf42c03addad7, type: 3}
+  - {fileID: 2337509756319959829, guid: c7eec74c24ef33e4e926590e2dd6f690, type: 3}
+  - {fileID: 2337509756319959829, guid: f880f80f98db3f4488be565a082fd658, type: 3}
+  - {fileID: 2337509756319959829, guid: 66c2295fb2d1f0246884c373781c306e, type: 3}
   markerPrefab: {fileID: 2187165592566620597, guid: a3703095126cc8041b5c4c20587caaab, type: 3}
   redMarkerPrefab: {fileID: 2075818595054763059, guid: c3d9f195878fa5a42a3fbb41acbd30ab, type: 3}
-  unitPrefab: {fileID: 214879434611196659, guid: 7ead9036dc8621840a2d0a5f800482ce, type: 3}
-  boxPrefab: {fileID: 4980846128863650616, guid: 48eb56116c15d2f46822d48c536e3907, type: 3}
+  obstaclePrefab: {fileID: 6415652109567477679, guid: c4f3e01c75c702b43a65cf519021ab74, type: 3}
   objectParent: {fileID: 1505710509}
-  unitParent: {fileID: 898779058}
-  objectsToSpawn: {x: 200, y: 500}
-  unitsToSpawn: 200
+  resourcePF: {fileID: 3774383868793270034, guid: c14e6f6f8082e12488e6b098fac5a8d1, type: 3}
+  resourcesToSpawn: 50
+  objectsToSpawn: {x: 100, y: 150}
+  activeUnits: []
+  activeResources: []
+  selectedPlayerUnits: []
   LeftTextWindow: {fileID: 1213378126}
 --- !u!114 &229054449
 MonoBehaviour:
@@ -295,14 +298,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 229054446}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3b7592f750364443a7f8134e5052823, type: 3}
+  m_Script: {fileID: 11500000, guid: 4e8f5677c07a58442b93ec0dd1acb942, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   gameCamera: {fileID: 963194225}
   camMoveSpeed: 10
-  leftClickPostion: {x: 0, y: 0}
-  rightClickPostion: {x: 0, y: 0}
-  slotClicked: {x: 0, y: 0}
+  leftClickPosition: {x: -1, y: -1}
+  rightClickPosition: {x: -1, y: -1}
+  leftDownPosition: {x: -1, y: -1}
+  leftUpPosition: {x: -1, y: -1}
+  mouseLUP: 0
+  mouseLDown: 0
+  mouseRDown: 0
   lastKeyPressed: 0
 --- !u!1 &627281236
 GameObject:
@@ -676,37 +683,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1855985467}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!1 &898779058
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 898779059}
-  m_Layer: 0
-  m_Name: Units
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &898779059
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 898779058}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -766,7 +742,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 50
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -792,13 +768,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.2588191, y: 0, z: 0, w: 0.9659258}
-  m_LocalPosition: {x: 50, y: 30, z: 0}
+  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: 30, y: 30, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1855985467}
-  m_LocalEulerAnglesHint: {x: 30, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 45, y: 0, z: 0}
 --- !u!1 &1213378124
 GameObject:
   m_ObjectHideFlags: 0
@@ -1592,7 +1568,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: CI516 AI Example 4
+  m_Text: 'CI516 AI Example 7             Player Control
+
+'
 --- !u!222 &2094964889
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1608,4 +1586,3 @@ SceneRoots:
   - {fileID: 229054447}
   - {fileID: 1855985467}
   - {fileID: 1505710510}
-  - {fileID: 898779059}

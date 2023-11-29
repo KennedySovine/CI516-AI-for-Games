@@ -283,8 +283,6 @@ MonoBehaviour:
   boxPrefab: {fileID: 4980846128863650616, guid: 48eb56116c15d2f46822d48c536e3907, type: 3}
   objectParent: {fileID: 1505710509}
   unitParent: {fileID: 898779058}
-  objectsToSpawn: {x: 200, y: 500}
-  unitsToSpawn: 200
   LeftTextWindow: {fileID: 1213378126}
 --- !u!114 &229054449
 MonoBehaviour:

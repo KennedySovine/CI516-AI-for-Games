@@ -277,10 +277,12 @@ MonoBehaviour:
   secondaryTargetPos: {x: 0, y: 0, z: 0}
   Teams:
   - {fileID: 2337509756319959829, guid: 8dc881b262e53c948badf42c03addad7, type: 3}
+  - {fileID: 2337509756319959829, guid: f880f80f98db3f4488be565a082fd658, type: 3}
+  - {fileID: 2337509756319959829, guid: 66c2295fb2d1f0246884c373781c306e, type: 3}
   markerPrefab: {fileID: 2187165592566620597, guid: a3703095126cc8041b5c4c20587caaab, type: 3}
   redMarkerPrefab: {fileID: 2075818595054763059, guid: c3d9f195878fa5a42a3fbb41acbd30ab, type: 3}
   unitPrefab: {fileID: 214879434611196659, guid: 7ead9036dc8621840a2d0a5f800482ce, type: 3}
-  boxPrefab: {fileID: 4980846128863650616, guid: 48eb56116c15d2f46822d48c536e3907, type: 3}
+  obstaclePrefab: {fileID: 6415652109567477679, guid: c4f3e01c75c702b43a65cf519021ab74, type: 3}
   objectParent: {fileID: 1505710509}
   unitParent: {fileID: 898779058}
   objectsToSpawn: {x: 200, y: 500}
@@ -300,9 +302,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameCamera: {fileID: 963194225}
   camMoveSpeed: 10
-  leftClickPostion: {x: 0, y: 0}
-  rightClickPostion: {x: 0, y: 0}
-  slotClicked: {x: 0, y: 0}
+  leftClickPostion: {x: 99, y: 99}
+  rightClickPostion: {x: 99, y: 99}
+  slotClicked: {x: 99, y: 99}
   lastKeyPressed: 0
 --- !u!1 &627281236
 GameObject:
@@ -792,13 +794,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.2588191, y: 0, z: 0, w: 0.9659258}
-  m_LocalPosition: {x: 50, y: 30, z: 0}
+  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: 20, y: 30, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1855985467}
-  m_LocalEulerAnglesHint: {x: 30, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 45, y: 0, z: 0}
 --- !u!1 &1213378124
 GameObject:
   m_ObjectHideFlags: 0

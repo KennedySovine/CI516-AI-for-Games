@@ -130,12 +130,14 @@ MonoBehaviour:
   currentPosition: {x: 5, y: 0, z: 8}
   startPosition: {x: 0, y: 0, z: 0}
   nextPosition: {x: 0, y: 0, z: 0}
+  goalPosition: {x: 0, y: 0, z: 0}
   speed: 3
+  isMoving: 0
   fleeRange: 20
   stopRange: 2
   obstacleAhead: 0
   unitHeading: 0
-  resourceRange: 20
+  resourceRange: 50
   resourceCarrying: 0
   resourceLimit: 10
   resourceHarvestSpeed: 10

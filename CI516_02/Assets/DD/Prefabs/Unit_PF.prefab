@@ -112,6 +112,7 @@ MonoBehaviour:
   currentPosition: {x: 5, y: 0, z: 8}
   startPosition: {x: 0, y: 0, z: 0}
   nextPosition: {x: 0, y: 0, z: 0}
+  goalPosition: {x: 0, y: 0, z: 0}
   speed: 5
   isMoving: 0
   fleeRange: 20
@@ -131,6 +132,7 @@ MonoBehaviour:
   attackCoolDown: 2
   attackPF: {fileID: 7542795780032822868, guid: aac069fcb5f172f43a45328ef4ea897f, type: 3}
   friendsIDs: 
+  waypointsToTarget: 
 --- !u!114 &7263510745834353569
 MonoBehaviour:
   m_ObjectHideFlags: 0

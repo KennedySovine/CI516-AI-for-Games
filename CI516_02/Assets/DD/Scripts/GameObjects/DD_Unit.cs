@@ -25,6 +25,7 @@ public class DD_Unit : DD_BaseObject
     public Vector3 currentPosition = Vector3.zero;
     public Vector3 startPosition = Vector3.zero;
     public Vector3 nextPosition = Vector3.zero;
+    public Vector3 goalPosition = Vector3.zero;
 
     [Header("Movement")]
     public float speed = 1;
@@ -70,10 +71,10 @@ public class DD_Unit : DD_BaseObject
 
         // Set initial states
         unitHeading = (Heading)Random.Range(0, 4);
-      
+
         if (!isPlayerControlled)
             unitState = States.wander;
-        else 
+        else
             unitState = States.idle;
 
 
@@ -119,8 +120,6 @@ public class DD_Unit : DD_BaseObject
     // ---------------------------------------------------------------------
     private void StateManager()
     {
-        // Enemy Target may need resetting if not targets exist
-
         if (isPlayerControlled) return;
         if (isMoving) return;
         if (isDepositing) return;
@@ -139,13 +138,9 @@ public class DD_Unit : DD_BaseObject
                 unitState = States.chase;
             }
 
-            if (Vector3.Distance(currentPosition, nearestResourcePosition) < stopRange)
-                unitState = States.idle;
-
             // wander if out of range 
             if (Vector3.Distance(currentPosition, nearestResourcePosition) > resourceRange)
                 unitState = States.wander;
-
 
             // Harvest Resource if close
             if (Vector3.Distance(nearestResourcePosition, currentPosition) <= stopRange)
@@ -154,7 +149,6 @@ public class DD_Unit : DD_BaseObject
             // Depoit Resource when full
             if (resourceCarrying > resourceLimit - 0.1F)
                 unitState = States.deposit;
-
         }
 
         // is the path blocked and not wandering
@@ -169,12 +163,78 @@ public class DD_Unit : DD_BaseObject
     }//----
 
 
+    // ---------------------------------------------------------------------
+    // Waypoint Movement Variables  
+    private bool foundNearWP = false;
+    public List<int> waypointsToTarget = new();
+    // ---------------------------------------------------------------------
+    public void WaypointMoveToTarget(Vector3 pTargetPosition)
+    {
+        if (pTargetPosition.x < 0 || pTargetPosition.z < 0) return; // target off the playArea
+
+        print("waypoint move");
+        unitState = States.idle;
+
+        if (waypointsToTarget.Count == 0)
+        {
+            foundNearWP = false;
+            if (gameManager.ai.CheckTargetInLineOfSight(currentPosition, pTargetPosition))
+            {
+                print("target in sight");
+            }
+            else
+            {
+                if (!foundNearWP)
+                {
+                    waypointsToTarget = (gameManager.ai.GetListOfWaypointsToTarget(currentPosition, pTargetPosition));
+                    foundNearWP = true;
+                }
+            }
+        }
+
+        // Move to waypoints
+        if (waypointsToTarget.Count > 0) // waypoints still exist
+        {
+          //  print(" moving toward WP");
+            // Move to first position in List
+            targetPosition = gameManager.ai.wayPointPositions[waypointsToTarget[0]];
+            ChaseDirect(false);
+
+            // Remove Waypoint from list when we reach it
+            if (Vector3.Distance(currentPosition, targetPosition) < stopRange)
+            {
+               // print("removing wp");
+                waypointsToTarget.RemoveAt(0);
+            }
+            // goal in sight - clear list
+            if (gameManager.ai.CheckTargetInLineOfSight(currentPosition, pTargetPosition))
+            {
+                waypointsToTarget.Clear();
+                // lastSetTarget = Vector3.zero;
+            }
+        }
+        else // Move to target
+        {
+            targetPosition = pTargetPosition;
+
+            if (Vector3.Distance(pTargetPosition, transform.position) < stopRange)
+                unitState = States.idle;
+            else
+                ChaseDirect(false);
+        }
+
+    }//---
+
+
+
 
     //                   ****************   COMBAT ***************************
     // ---------------------------------------------------------------------
     public void AttackEnemy()
     {
         if (!isAlive) return;
+
+        if (waypointsToTarget.Count > 0) waypointsToTarget.Clear();
 
         if (!nearestEnemy)
         {
@@ -225,7 +285,6 @@ public class DD_Unit : DD_BaseObject
             foreach (GameObject foundActiveUnit in gameManager.activeUnits) // Loop through list of units
             {
                 bool friendFound = false;
-
                 // ignore own team members and Friends
                 foreach (int friendID in friendsIDs)
                 {
@@ -245,7 +304,7 @@ public class DD_Unit : DD_BaseObject
 
             // Set Target of Enemy Unit
             if (closestEnemy != null)
-            {     
+            {
                 nearestEnemyPosition = new((int)Mathf.Round(closestEnemy.transform.position.x), 0, (int)Mathf.Round(closestEnemy.transform.position.z));
                 nearestEnemy = closestEnemy;
             }
@@ -255,20 +314,6 @@ public class DD_Unit : DD_BaseObject
             }
         }
     }//-----
-
-
-
-
-    private void FindNearestAmmo()
-    {
-
-
-    }
-
-    private void FindHealth()
-    {
-
-    }
 
 
 
@@ -343,8 +388,10 @@ public class DD_Unit : DD_BaseObject
     // ---------------------------------------------------------------------
     private void DepositResource()
     {
+       // print("depositing");
+
         // Move home
-        if (Vector3.Distance(basePosition, currentPosition) > stopRange)
+        if (Vector3.Distance(basePosition, currentPosition) > stopRange && !isDepositing)
         {
             targetPosition = basePosition;
             ChaseDirect(false);
@@ -371,9 +418,7 @@ public class DD_Unit : DD_BaseObject
 
 
 
-
     //                      ****************   MOVEMENT   ***************************
-
     // ---------------------------------------------------------------------
     private void ChaseDirect(bool reverse)
     {
