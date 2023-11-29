@@ -134,8 +134,12 @@ public class DD_Unit : DD_BaseObject
             // Check Resource in Range 
             if (Vector3.Distance(currentPosition, nearestResourcePosition) < resourceRange)
             {
-                targetPosition = nearestResourcePosition;
-                unitState = States.chase;
+                if (gameManager.ai.CheckTargetInLineOfSight(currentPosition, nearestResourcePosition))
+                {
+                    targetPosition = nearestResourcePosition;
+                    unitState = States.chase;
+
+                }
             }
 
             // wander if out of range 
