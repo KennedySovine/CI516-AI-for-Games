@@ -121,7 +121,7 @@ MonoBehaviour:
   teamColor: {r: 0.98894453, g: 0, b: 1, a: 1}
   teamID: -1
   teamName: Team 1  - PC
-  teamMembersTotal: 1
+  teamMembersTotal: 10
   activeTeamMembers: 0
   teamResources: 50
   teamPosition: {x: 15, y: 15}
@@ -133,4 +133,4 @@ MonoBehaviour:
   teamUnits: []
   spawnCoolDownTime: 5
   squad: []
-  squadActive: 0
+  squadActive: 1

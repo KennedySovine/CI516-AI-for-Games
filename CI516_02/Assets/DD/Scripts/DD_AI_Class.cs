@@ -87,7 +87,7 @@ public class DD_AI_Class : MonoBehaviour
 
         if (distanceToTarget > 100 || distanceToStart > 100)
         {
-            print ( "\n position not in sight of a waypoint");
+           // print ( "\n position not in sight of a waypoint");
             return wayPointsFound;
         }
 
@@ -112,7 +112,7 @@ public class DD_AI_Class : MonoBehaviour
                 currentWP = nextWP;
             }
         }
-        print(" WPs in Path: " + wayPointsFound.Count ) ;
+       // print(" WPs in Path: " + wayPointsFound.Count ) ;
 
         return wayPointsFound;
     }//---
@@ -143,54 +143,6 @@ public class DD_AI_Class : MonoBehaviour
         }
         Vector3 wayPointPos = new(wayPointPositions[nearestWP].x, 0, wayPointPositions[nearestWP].z);
         return wayPointPos;
-    }//---
-
-
-    //Allows for the usage of letting the unit randomly "choose" the next waypoint to go to.
-    //in other files, randomly selects from the array thats returned instead of always going to the nearest one.
-    public Vector3[] GetNearestWaypointstoPos(Vector3 currentPosition, int amount)
-    {
-        int nearestWP = 0;
-        float distanceToNearestWP = 1000; //  a large number off the board initially
-        bool waypointAdded = false;
-        Vector3[] closestWPs = new Vector3[amount];
-
-        //set all items in the array to a value
-        for (int i = 0; i < closestWPs.Length - 1; i++)
-        {
-            closestWPs[i] = currentPosition;
-        }
-
-        // Loop through all wps
-        for (int i = 1; i < wayPointPositions.GetLength(0); i++)
-        {
-            float distance = Vector3.Distance(currentPosition, wayPointPositions[i]);
-
-            // is waypoint in line of sight
-            if (CheckTargetInLineOfSight(currentPosition, wayPointPositions[i]))
-            {
-                if (distance < distanceToNearestWP)
-                {
-                    distanceToNearestWP = distance;
-                    nearestWP = i;
-                }
-
-                Vector3 wayPointPos = new(wayPointPositions[nearestWP].x, 0, wayPointPositions[nearestWP].z);
-                while (!waypointAdded)
-                {
-                    for (int j = closestWPs.Length - 1; j >= 0; j--)
-                    {
-                        if ((Vector3.Distance(currentPosition, closestWPs[j])) > (Vector3.Distance(currentPosition, wayPointPos)))
-                        {
-                            closestWPs[j] = wayPointPos;
-                            waypointAdded = true;
-                        }
-                    }
-                    waypointAdded = true;
-                }
-            }
-        }
-        return closestWPs;
     }//---
 
 

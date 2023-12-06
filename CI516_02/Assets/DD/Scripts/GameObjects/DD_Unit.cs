@@ -141,7 +141,6 @@ public class DD_Unit : DD_BaseObject
                 {
                     targetPosition = nearestResourcePosition;
                     unitState = States.chase;
-
                 }
             }
 
@@ -171,38 +170,25 @@ public class DD_Unit : DD_BaseObject
 
 
     // ---------------------------------------------------------------------
-    // Waypoint Movement Variables  
-    private bool foundNearWP = false;
+    // Waypoint Movement Variables      
     public List<int> waypointsToTarget = new();
     // ---------------------------------------------------------------------
     public void WaypointMoveToTarget(Vector3 pTargetPosition)
     {
         if (pTargetPosition.x < 0 || pTargetPosition.z < 0) return; // target off the playArea
-
-        print("waypoint move");
         unitState = States.idle;
 
         if (waypointsToTarget.Count == 0)
-        {
-            foundNearWP = false;
-            if (gameManager.ai.CheckTargetInLineOfSight(currentPosition, pTargetPosition))
-            {
-                print("target in sight");
-            }
-            else
-            {
-                if (!foundNearWP)
-                {
-                    waypointsToTarget = (gameManager.ai.GetListOfWaypointsToTarget(currentPosition, pTargetPosition));
-                    foundNearWP = true;
-                }
+        {           
+            if (!gameManager.ai.CheckTargetInLineOfSight(currentPosition, pTargetPosition))
+            {  
+                waypointsToTarget = (gameManager.ai.GetListOfWaypointsToTarget(currentPosition, pTargetPosition));
             }
         }
 
         // Move to waypoints
         if (waypointsToTarget.Count > 0) // waypoints still exist
         {
-          //  print(" moving toward WP");
             // Move to first position in List
             targetPosition = gameManager.ai.wayPointPositions[waypointsToTarget[0]];
             ChaseDirect(false);
@@ -210,14 +196,13 @@ public class DD_Unit : DD_BaseObject
             // Remove Waypoint from list when we reach it
             if (Vector3.Distance(currentPosition, targetPosition) < stopRange)
             {
-               // print("removing wp");
                 waypointsToTarget.RemoveAt(0);
             }
             // goal in sight - clear list
             if (gameManager.ai.CheckTargetInLineOfSight(currentPosition, pTargetPosition))
             {
                 waypointsToTarget.Clear();
-                // lastSetTarget = Vector3.zero;
+
             }
         }
         else // Move to target
@@ -324,7 +309,7 @@ public class DD_Unit : DD_BaseObject
 
 
 
-    //                      ****************   RESOURCES   ***************************
+    //                      ****************   RESOURCES   
 
     // ---------------------------------------------------------------------
     private void FindNearestResource()
@@ -395,13 +380,22 @@ public class DD_Unit : DD_BaseObject
     // ---------------------------------------------------------------------
     private void DepositResource()
     {
-       // print("depositing");
+        // print("depositing");
 
         // Move home
         if (Vector3.Distance(basePosition, currentPosition) > stopRange && !isDepositing)
         {
-            targetPosition = basePosition;
-            WaypointMoveToTarget(targetPosition);
+            if (gameManager.ai.CheckTargetInLineOfSight(basePosition, currentPosition))
+            {
+                //  print("base in sight");
+                targetPosition = basePosition;
+                ChaseDirect(false);
+            }
+            else
+            {
+                //print("base not  in sight");
+                WaypointMoveToTarget(basePosition);
+            }
         }
         else // Unit is Close to home
         {
@@ -427,7 +421,7 @@ public class DD_Unit : DD_BaseObject
 
     //                      ****************   MOVEMENT   ***************************
     // ---------------------------------------------------------------------
-    private void ChaseDirect(bool reverse)
+    public void ChaseDirect(bool reverse)
     {
         if (!isMoving) // Move to target if unit is not moving
         {

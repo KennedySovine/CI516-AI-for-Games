@@ -5,6 +5,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 
 public class DD_GameManager : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class DD_GameManager : MonoBehaviour
     public Vector3 playerSetTargetPos = new(-50, 50, -50);
 
     [Header("Game Objects")]
-    public GameObject[] Teams = new GameObject[2];
+    public GameObject[] teams = new GameObject[2];
     public GameObject markerPrefab;
     public GameObject redMarkerPrefab;
     private GameObject selectionMarker;
@@ -29,6 +30,7 @@ public class DD_GameManager : MonoBehaviour
     public Vector2 objectsToSpawn = new(500, 1000);
     public DD_Levels levelData;
     public DD_AI_Class ai;
+    public DD_Team playerTeam;
 
 
     // Lists of Active Objects
@@ -64,10 +66,13 @@ public class DD_GameManager : MonoBehaviour
     private void FixedUpdate() // Capped at 50 FPS
     {
         DisplayGameData();
-        SetSelectionMarkers();
+        // SetSelectionMarkers();
     }//---
 
-
+    private void Update()
+    {
+        SetSelectionMarkers();
+    }
 
     // ---------------------------------------------------------------------
     private void AddInitialGameObjects()
@@ -160,6 +165,7 @@ public class DD_GameManager : MonoBehaviour
         if (selectedPlayerUnits.Count > 0)
             foreach (GameObject unit in selectedPlayerUnits)
                 unit.GetComponent<DD_UnitPlayerControl>().isSelected = true;
+
     }//-----
 
 
@@ -221,6 +227,28 @@ public class DD_GameManager : MonoBehaviour
             }
         }
 
+
+        // Squad
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {            
+            if (!playerTeam.squadActive)
+            {
+                print("Setting squad");
+                playerTeam.squad.Clear();
+                playerTeam.squadActive = true;
+                foreach (GameObject unit in selectedPlayerUnits)
+                {
+                    playerTeam.squad.Add(unit);
+                }
+            }
+            else
+            {
+                print("Clearing squad");
+                playerTeam.squad.Clear();
+                playerTeam.squadActive = false;
+            }
+        }
     }//-----
 
 
@@ -234,9 +262,9 @@ public class DD_GameManager : MonoBehaviour
         int newX = -5;
         int teamIndex = 0;
 
-        foreach (GameObject team in Teams)
+        foreach (GameObject team in teams)
         {
-            GameObject newTeam = Instantiate(Teams[teamIndex], new Vector3((float)newX, 0, (float)newZ), transform.rotation);
+            GameObject newTeam = Instantiate(teams[teamIndex], new Vector3((float)newX, 0, (float)newZ), transform.rotation);
 
             newX = (int)Mathf.Round(newTeam.GetComponent<DD_Team>().teamPosition.x);
             newZ = (int)Mathf.Round(newTeam.GetComponent<DD_Team>().teamPosition.y);
@@ -249,6 +277,8 @@ public class DD_GameManager : MonoBehaviour
                 newTeam.GetComponent<DD_Team>().teamID = teamIndex + 1;
             }
             activeTeams.Add(newTeam);
+            if (teamIndex == 0) playerTeam = newTeam.GetComponent<DD_Team>();
+
             teamIndex++;
         }
     }//-----

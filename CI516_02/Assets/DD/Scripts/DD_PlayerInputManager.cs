@@ -64,6 +64,9 @@ public class DD_PlayerInputManager : MonoBehaviour
 
     private void GetPlayerMouseClick()
     {
+
+    
+
         //if the left or right mouse button clicked
         if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
         {
