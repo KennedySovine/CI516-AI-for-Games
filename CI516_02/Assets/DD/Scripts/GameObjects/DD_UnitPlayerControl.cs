@@ -150,6 +150,10 @@ public class DD_UnitPlayerControl : MonoBehaviour
         if (squadID > 1) // part of squad but not leader
         {
             SetSquadPosition();
+            if (Vector3.Distance(unitScript.nearestEnemyPosition, unitScript.currentPosition) < unitScript.enemyChaseRange)
+            {
+                unitScript.AttackEnemy();
+            }
             return;
         }
 
